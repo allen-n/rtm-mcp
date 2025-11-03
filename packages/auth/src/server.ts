@@ -1,5 +1,5 @@
-import { betterAuth } from "better-auth";
 import { db } from "@db/kysely";
+import { betterAuth } from "better-auth";
 import type { Session, SessionUser } from "./types";
 
 // Configure authentication with OAuth and email/password support

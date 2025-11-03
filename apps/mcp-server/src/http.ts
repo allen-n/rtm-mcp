@@ -1,11 +1,11 @@
+import { auth, getSession } from "@auth/server";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { auth, getSession } from "@auth/server";
+import { mcpServer } from "./mcp.js";
 import { authRoutes } from "./routes/auth.js";
 import { webhookRoutes } from "./routes/webhook.js";
-import { mcpServer } from "./mcp.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 
 type Variables = {
   user: typeof auth.$Infer.Session.user | null;

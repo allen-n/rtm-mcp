@@ -1,7 +1,7 @@
-import { Hono } from "hono";
-import { getRtmClient } from "@rtm-client/client";
-import { db } from "@db/kysely";
 import { getSession, requireUser } from "@auth/server";
+import { db } from "@db/kysely";
+import { getRtmClient } from "@rtm-client/client";
+import { Hono } from "hono";
 
 export function authRoutes() {
   const app = new Hono();

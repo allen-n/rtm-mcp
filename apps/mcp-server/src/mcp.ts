@@ -1,8 +1,8 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
 import { db } from "@db/kysely";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getRtmClient, RtmApiError } from "@rtm-client/client";
 import { getOrCreateTimeline } from "@rtm-client/timeline";
+import { z } from "zod";
 
 // Use Zod schemas for MCP tool definitions
 const mcpServer = new McpServer({

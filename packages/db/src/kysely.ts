@@ -1,7 +1,7 @@
-import { Kysely, SqliteDialect } from "kysely";
-import Database from "better-sqlite3";
-import path from "node:path";
 import fs from "node:fs";
+import path from "node:path";
+import Database from "better-sqlite3";
+import { Kysely, SqliteDialect } from "kysely";
 import type { DB } from "./schema";
 
 const dbPath = process.env.DATABASE_URL?.startsWith("file:")

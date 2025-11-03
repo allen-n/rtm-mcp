@@ -1,8 +1,8 @@
-import { db } from "./kysely.js";
-import { Migrator, FileMigrationProvider } from "kysely";
-import path from "node:path";
 import { promises as fs } from "node:fs";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { Migrator, FileMigrationProvider } from "kysely";
+import { db } from "./kysely.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

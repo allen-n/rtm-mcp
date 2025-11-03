@@ -20,10 +20,9 @@ app.use("*", logger());
 app.use(
   "*",
   cors({
-    origin: [
-      "http://localhost:3000",
-      process.env.WEB_APP_URL || "",
-    ].filter(Boolean),
+    origin: ["http://localhost:3000", process.env.WEB_APP_URL || ""].filter(
+      Boolean
+    ),
     credentials: true,
   })
 );

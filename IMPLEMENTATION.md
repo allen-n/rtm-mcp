@@ -138,7 +138,7 @@ Based on user's decisions:
 4. **Lease Renewal**: Infrastructure ready but renewal logic stubbed
 
 ## File Structure
-```
+```text
 mcp-rtm/
 ├── apps/
 │   ├── mcp-server/          # MCP server with Hono

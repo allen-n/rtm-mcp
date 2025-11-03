@@ -4,6 +4,9 @@ import crypto from "node:crypto";
  * Params must be sorted alphabetically by key
  */
 export function apiSig(params, sharedSecret) {
+    if (!sharedSecret) {
+        throw new Error("RTM shared secret is required to sign requests");
+    }
     const sorted = Object.keys(params)
         .sort()
         .map((key) => `${key}${params[key]}`)

@@ -26,7 +26,10 @@ export function verifyWebhookSignature(signature, eventId, secret) {
             .update(payload)
             .digest("hex");
         // Constant-time comparison
-        return crypto.timingSafeEqual(Buffer.from(receivedSig), Buffer.from(expectedSig));
+        return crypto.timingSafeEqual(
+            Buffer.from(receivedSig, "hex"),
+            Buffer.from(expectedSig, "hex")
+        );
     }
     catch (error) {
         console.error("Webhook signature verification error:", error);

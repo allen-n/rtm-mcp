@@ -31,9 +31,9 @@ async function getUserRtmToken(userId: string) {
 // Resources - provide read-only data access
 mcpServer.registerResource(
   "rtm_lists",
+  "rtm://lists",
   {
-    uri: "rtm://lists",
-    name: "RTM Lists",
+    title: "RTM Lists",
     description: "User's Remember The Milk lists",
     mimeType: "application/json",
   },

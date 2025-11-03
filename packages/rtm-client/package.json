@@ -1,0 +1,13 @@
+{
+  "name": "@packages/rtm-client",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "src/client.ts",
+  "dependencies": {
+    "undici": "^6.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "mcp-rtm",
+  "private": true,
+  "packageManager": "pnpm@9.11.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev:mcp": "pnpm --filter @apps/mcp-server dev",
+    "dev:web": "pnpm --filter @apps/web dev",
+    "migrate": "pnpm --filter @packages/db migrate",
+    "db:generate": "pnpm --filter @packages/db generate"
+  }
+}

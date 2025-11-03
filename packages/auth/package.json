@@ -1,0 +1,13 @@
+{
+  "name": "@packages/auth",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "src/server.ts",
+  "dependencies": {
+    "better-auth": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.6.3"
+  }
+}

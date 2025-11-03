@@ -1,0 +1,51 @@
+version: "3.9"
+
+services:
+  migrations:
+    build:
+      context: .
+      dockerfile: packages/db/Dockerfile
+    environment:
+      DATABASE_URL: file:/app/data/dev.db
+    volumes:
+      - sqlite_data:/app/data
+    command: ["pnpm","--filter","@packages/db","migrate"]
+
+  mcp:
+    build:
+      context: .
+      dockerfile: apps/mcp-server/Dockerfile
+    environment:
+      PORT: 8787
+      APP_BASE_URL: http://mcp:8787
+      RTM_API_KEY: ${RTM_API_KEY}
+      RTM_SHARED_SECRET: ${RTM_SHARED_SECRET}
+      RTM_CALLBACK_URL: http://localhost:8787/rtm/callback
+      RTM_WEBHOOK_SECRET: ${RTM_WEBHOOK_SECRET}
+      DATABASE_URL: file:/app/data/dev.db
+      DB_DIALECT: sqlite
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: http://localhost:8787
+      MCP_SERVER_NAME: ${MCP_SERVER_NAME:-rtm-mcp-server}
+      MCP_SERVER_VERSION: ${MCP_SERVER_VERSION:-1.0.0}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "8787:8787"
+    depends_on:
+      - migrations
+    volumes:
+      - sqlite_data:/app/data
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      NEXT_PUBLIC_API_BASE: http://localhost:8787
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mcp
+
+volumes:
+  sqlite_data:

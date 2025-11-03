@@ -8,6 +8,10 @@ export function apiSig(
   params: Record<string, string>,
   sharedSecret: string
 ): string {
+  if (!sharedSecret) {
+    throw new Error("RTM shared secret is required to sign requests");
+  }
+
   const sorted = Object.keys(params)
     .sort()
     .map((key) => `${key}${params[key]}`)

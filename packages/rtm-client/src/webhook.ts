@@ -38,8 +38,8 @@ export function verifyWebhookSignature(
 
     // Constant-time comparison
     return crypto.timingSafeEqual(
-      Buffer.from(receivedSig),
-      Buffer.from(expectedSig)
+      Buffer.from(receivedSig, "hex"),
+      Buffer.from(expectedSig, "hex")
     );
   } catch (error) {
     console.error("Webhook signature verification error:", error);

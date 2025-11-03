@@ -12,6 +12,12 @@ build/
 .next/
 out/
 
+# TypeScript compiled output in packages (source is .ts files)
+packages/**/*.js
+packages/**/*.js.map
+packages/**/*.d.ts
+!packages/**/*.config.js
+
 # Environment files
 .env
 .env.local

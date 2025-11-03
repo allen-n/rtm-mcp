@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { db } from "@db/kysely";
 import { getRtmClient, RtmApiError } from "./client.js";
 

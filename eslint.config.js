@@ -42,6 +42,10 @@ export default [
         Buffer: "readonly",
         __dirname: "readonly",
         __filename: "readonly",
+        setTimeout: "readonly",
+        setInterval: "readonly",
+        clearTimeout: "readonly",
+        clearInterval: "readonly",
         // Browser globals (for Next.js)
         fetch: "readonly",
         FormData: "readonly",

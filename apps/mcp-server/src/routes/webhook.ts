@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// Remove typescript disable when event types are defined in rtm-client
 import { verifyWebhookSignature, parseWebhookEvent } from "@rtm-client/webhook";
 import { Hono } from "hono";
 
@@ -83,7 +85,7 @@ async function handleTaskTagged(event: any) {
   // TODO: Implement logic
 }
 
-async function handleChangesAvailable(event: any) {
+async function handleChangesAvailable(_event: any) {
   console.log("Changes available for user");
   // TODO: Implement sync logic if needed
 }

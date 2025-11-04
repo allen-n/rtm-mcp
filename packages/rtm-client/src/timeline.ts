@@ -1,6 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { db } from "@db/kysely";
 import { getRtmClient, RtmApiError } from "./client.js";
-import { randomUUID } from "node:crypto";
 
 /**
  * Get or create a timeline for the current session

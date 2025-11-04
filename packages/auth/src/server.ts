@@ -8,6 +8,7 @@ export const auth = betterAuth({
 
   appName: process.env.APP_NAME || "MCP-RTM",
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   secret: process.env.BETTER_AUTH_SECRET!,
 
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:8787",

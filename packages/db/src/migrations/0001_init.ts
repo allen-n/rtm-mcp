@@ -1,6 +1,6 @@
 import type { Kysely } from "kysely";
 
-export async function up(db: Kysely<any>): Promise<void> {
+export async function up(db: Kysely<unknown>): Promise<void> {
   // Users table
   await db.schema
     .createTable("users")
@@ -26,8 +26,13 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("expires_at", "text", (col) => col.notNull())
     .addColumn("token", "text", (col) => col.notNull())
     .addColumn("created_at", "text", (col) => col.notNull())
-    .addForeignKeyConstraint("sessions_user_fk", ["user_id"], "users", ["id"], (fk) =>
-      fk.onDelete("cascade"))
+    .addForeignKeyConstraint(
+      "sessions_user_fk",
+      ["user_id"],
+      "users",
+      ["id"],
+      (fk) => fk.onDelete("cascade")
+    )
     .execute();
 
   // Accounts table (BetterAuth for OAuth)
@@ -41,8 +46,13 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("refresh_token", "text")
     .addColumn("expires_at", "text")
     .addColumn("created_at", "text", (col) => col.notNull())
-    .addForeignKeyConstraint("accounts_user_fk", ["user_id"], "users", ["id"], (fk) =>
-      fk.onDelete("cascade"))
+    .addForeignKeyConstraint(
+      "accounts_user_fk",
+      ["user_id"],
+      "users",
+      ["id"],
+      (fk) => fk.onDelete("cascade")
+    )
     .execute();
 
   // RTM tokens
@@ -55,8 +65,13 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("username", "text")
     .addColumn("fullname", "text")
     .addColumn("updated_at", "text", (col) => col.notNull())
-    .addForeignKeyConstraint("rtm_tokens_user_fk", ["user_id"], "users", ["id"], (fk) =>
-      fk.onDelete("cascade"))
+    .addForeignKeyConstraint(
+      "rtm_tokens_user_fk",
+      ["user_id"],
+      "users",
+      ["id"],
+      (fk) => fk.onDelete("cascade")
+    )
     .execute();
 
   // Timeline management - session-based with expiry
@@ -67,8 +82,13 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("timeline", "text", (col) => col.notNull())
     .addColumn("created_at", "text", (col) => col.notNull())
     .addColumn("expires_at", "text", (col) => col.notNull())
-    .addForeignKeyConstraint("rtm_timelines_user_fk", ["user_id"], "users", ["id"], (fk) =>
-      fk.onDelete("cascade"))
+    .addForeignKeyConstraint(
+      "rtm_timelines_user_fk",
+      ["user_id"],
+      "users",
+      ["id"],
+      (fk) => fk.onDelete("cascade")
+    )
     .execute();
 
   await db.schema
@@ -91,8 +111,13 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("status", "text", (col) => col.notNull())
     .addColumn("created_at", "text", (col) => col.notNull())
     .addColumn("updated_at", "text", (col) => col.notNull())
-    .addForeignKeyConstraint("webhook_subs_user_fk", ["user_id"], "users", ["id"], (fk) =>
-      fk.onDelete("cascade"))
+    .addForeignKeyConstraint(
+      "webhook_subs_user_fk",
+      ["user_id"],
+      "users",
+      ["id"],
+      (fk) => fk.onDelete("cascade")
+    )
     .execute();
 
   await db.schema
@@ -102,7 +127,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .execute();
 }
 
-export async function down(db: Kysely<any>): Promise<void> {
+export async function down(db: Kysely<unknown>): Promise<void> {
   await db.schema.dropTable("webhook_subs").execute();
   await db.schema.dropTable("rtm_timelines").execute();
   await db.schema.dropTable("rtm_tokens").execute();

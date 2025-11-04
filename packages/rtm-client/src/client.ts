@@ -26,7 +26,7 @@ export class RtmClient {
    */
   async call(
     method: string,
-    params: Record<string, any> = {},
+    params: Record<string, unknown> = {},
     authToken?: string
   ): Promise<RtmApiResponse> {
     const baseParams: Record<string, string> = {
@@ -146,7 +146,7 @@ export class RtmClient {
   /**
    * Get user's lists
    */
-  async getLists(authToken: string): Promise<any> {
+  async getLists(authToken: string): Promise<unknown> {
     const data = await this.call("rtm.lists.getList", {}, authToken);
     return data.rsp.lists;
   }
@@ -158,8 +158,8 @@ export class RtmClient {
     authToken: string,
     listId?: string,
     filter?: string
-  ): Promise<any> {
-    const params: Record<string, any> = {};
+  ): Promise<unknown> {
+    const params: Record<string, unknown> = {};
     if (listId) params.list_id = listId;
     if (filter) params.filter = filter;
 
@@ -176,8 +176,8 @@ export class RtmClient {
     name: string,
     listId?: string,
     parse?: boolean
-  ): Promise<any> {
-    const params: Record<string, any> = {
+  ): Promise<unknown> {
+    const params: Record<string, unknown> = {
       timeline,
       name,
     };
@@ -197,7 +197,7 @@ export class RtmClient {
     listId: string,
     taskseriesId: string,
     taskId: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     const params = {
       timeline,
       list_id: listId,
@@ -219,14 +219,14 @@ export class RtmClient {
     taskseriesId: string,
     taskId: string,
     priority: "1" | "2" | "3" | "N"
-  ): Promise<any> {
+  ): Promise<unknown> {
     const params = {
       timeline,
       list_id: listId,
       taskseries_id: taskseriesId,
       task_id: taskId,
       priority,
-    };
+    } satisfies Record<string, string>;
 
     const data = await this.call("rtm.tasks.setPriority", params, authToken);
     return data.rsp.list;
@@ -235,7 +235,7 @@ export class RtmClient {
   /**
    * Get available webhook topics (stubbed for now)
    */
-  async getWebhookTopics(authToken: string): Promise<string[]> {
+  async getWebhookTopics(_authToken: string): Promise<string[]> {
     // Stubbed - will be implemented later
     return [];
   }
@@ -244,12 +244,12 @@ export class RtmClient {
    * Subscribe to webhooks (stubbed for now)
    */
   async subscribeWebhook(
-    authToken: string,
-    url: string,
-    topics: string[],
-    filter?: string,
-    leaseSeconds?: number
-  ): Promise<any> {
+    _authToken: string,
+    _url: string,
+    _topics: string[],
+    _filter?: string,
+    _leaseSeconds?: number
+  ): Promise<unknown> {
     // Stubbed - will be implemented later
     return { subscription_id: "stub" };
   }
@@ -257,7 +257,7 @@ export class RtmClient {
   /**
    * Get active webhook subscriptions (stubbed for now)
    */
-  async getWebhookSubscriptions(authToken: string): Promise<any[]> {
+  async getWebhookSubscriptions(_authToken: string): Promise<unknown[]> {
     // Stubbed - will be implemented later
     return [];
   }
@@ -266,8 +266,8 @@ export class RtmClient {
    * Unsubscribe from webhooks (stubbed for now)
    */
   async unsubscribeWebhook(
-    authToken: string,
-    subscriptionId: string
+    _authToken: string,
+    _subscriptionId: string
   ): Promise<void> {
     // Stubbed - will be implemented later
   }

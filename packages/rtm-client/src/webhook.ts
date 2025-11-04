@@ -50,6 +50,8 @@ export function verifyWebhookSignature(
 /**
  * Parse and validate webhook event
  */
+// Disable ignore when types are defined in rtm-client webhooks
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function parseWebhookEvent(body: any): WebhookEvent | null {
   try {
     if (!body.id || !body.ts || !body.type) {

@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { auth, getSession } from "@auth/server";
 import type { Session } from "@auth/server";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
@@ -15,7 +17,21 @@ type Variables = {
   session: SessionResult["session"] | null;
 };
 
-const app = new Hono<{ Variables: Variables }>();
+type NodeBindings = {
+  incoming: IncomingMessage;
+  outgoing: ServerResponse;
+};
+
+const MCP_ALREADY_SENT_HEADER = "x-hono-already-sent";
+
+const app = new Hono<{ Bindings: NodeBindings; Variables: Variables }>();
+
+const streamableTransport = new StreamableHTTPServerTransport({
+  sessionIdGenerator: randomUUID,
+  enableDnsRebindingProtection: false,
+});
+
+const transportReady = mcpServer.connect(streamableTransport);
 
 // Middleware
 app.use("*", logger());
@@ -55,24 +71,44 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 app.route("/rtm", authRoutes());
 app.route("/webhook", webhookRoutes());
 
-// MCP server endpoint using StreamableHTTP
 app.post("/mcp", async (c) => {
   const user = c.get("user");
   if (!user?.id) {
     return c.json({ error: "Unauthorized" }, 401);
   }
 
+  const { incoming, outgoing } = c.env;
+  if (!incoming || !outgoing) {
+    console.error("Streamable transport requires Node bindings");
+    return c.json({ error: "MCP transport unavailable" }, 500);
+  }
+
+  await transportReady;
+
+  const nodeRequest = incoming as IncomingMessage & { auth?: unknown };
+
   try {
-    const transport = new StreamableHTTPServerTransport("/mcp", c.req.raw);
-
     await withUserContext(user.id, async () => {
-      await mcpServer.connect(transport);
+      await streamableTransport.handleRequest(nodeRequest, outgoing);
     });
-
-    return transport.response;
+    return new Response(null, {
+      status: 200,
+      headers: { [MCP_ALREADY_SENT_HEADER]: "true" },
+    });
   } catch (error) {
     console.error("MCP endpoint error:", error);
-    return c.json({ error: "Internal server error" }, 500);
+
+    if (!outgoing.writableEnded) {
+      outwardErrorResponse(outgoing);
+    }
+
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: {
+        "content-type": "application/json",
+        [MCP_ALREADY_SENT_HEADER]: "true",
+      },
+    });
   }
 });
 
@@ -94,3 +130,19 @@ app.onError((err, c) => {
 });
 
 export { app };
+
+function outwardErrorResponse(res: ServerResponse) {
+  try {
+    if (!res.headersSent) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+    }
+    res.end(JSON.stringify({ error: "Internal server error" }));
+  } catch (err) {
+    console.error("Failed to finalize MCP error response:", err);
+    try {
+      res.end();
+    } catch {
+      // ignore
+    }
+  }
+}

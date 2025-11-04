@@ -5,7 +5,7 @@ export interface RtmApiResponse {
       code: string;
       msg: string;
     };
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -27,5 +27,5 @@ export interface WebhookEvent {
   id: string;
   ts: string; // ISO 8601
   type: string;
-  data: any;
+  data: unknown;
 }

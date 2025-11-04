@@ -1,6 +1,9 @@
+import React from "react";
+
 export const metadata = {
-  title: 'MCP-RTM Portal',
-  description: 'Connect your Remember The Milk account to use with AI assistants via MCP',
+  title: "MCP-RTM Portal",
+  description:
+    "Connect your Remember The Milk account to use with AI assistants via MCP",
 };
 
 export default function RootLayout({

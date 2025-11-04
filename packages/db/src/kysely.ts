@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Kysely, SqliteDialect } from "kysely";
 import Database from "better-sqlite3";
+import { Kysely, SqliteDialect } from "kysely";
 import type { DB } from "./schema";
 
 const rawUrl = process.env.DATABASE_URL;

@@ -1,7 +1,7 @@
+import Bottleneck from "bottleneck";
 import { request } from "undici";
 import { apiSig } from "./sign.js";
-import type { RtmApiResponse, RtmTimeline, RtmAuthToken } from "./types";
-import { RateLimiter } from "./util/limiter.js";
+import type { RtmApiResponse, RtmAuthToken } from "./types";
 
 const API_BASE = "https://api.rememberthemilk.com/services/rest/";
 const AUTH_BASE = "https://www.rememberthemilk.com/services/auth/";
@@ -12,13 +12,13 @@ const API_VERSION = "2";
 export class RtmClient {
   private apiKey: string;
   private sharedSecret: string;
-  private limiter: RateLimiter;
+  private limiter: Bottleneck;
 
   constructor(apiKey: string, sharedSecret: string) {
     this.apiKey = apiKey;
     this.sharedSecret = sharedSecret;
-    // RTM allows ~1 req/sec per user, we use 500ms between requests to be safe
-    this.limiter = new RateLimiter(500);
+    // RTM allows ~1 req/sec per user, we use 800ms between requests to be safe
+    this.limiter = new Bottleneck({ maxConcurrent: 1, minTime: 800 });
   }
 
   /**
@@ -29,8 +29,6 @@ export class RtmClient {
     params: Record<string, any> = {},
     authToken?: string
   ): Promise<RtmApiResponse> {
-    await this.limiter.wait();
-
     const baseParams: Record<string, string> = {
       method,
       api_key: this.apiKey,
@@ -57,10 +55,12 @@ export class RtmClient {
     const qs = new URLSearchParams(allParams).toString();
 
     try {
-      const { body, statusCode } = await request(`${API_BASE}?${qs}`, {
-        method: "GET",
-        headers: { "User-Agent": "MCP-RTM/1.0" },
-      });
+      const { body, statusCode } = await this.limiter.schedule(() =>
+        request(`${API_BASE}?${qs}`, {
+          method: "GET",
+          headers: { "User-Agent": "MCP-RTM/1.0" },
+        })
+      );
 
       const data = (await body.json()) as RtmApiResponse;
 
@@ -275,11 +275,7 @@ export class RtmClient {
 
 // Custom error class for RTM API errors
 export class RtmApiError extends Error {
-  constructor(
-    public code: string,
-    message: string,
-    public statusCode: number
-  ) {
+  constructor(public code: string, message: string, public statusCode: number) {
     super(message);
     this.name = "RtmApiError";
   }

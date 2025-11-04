@@ -1,4 +1,3 @@
-import { db } from "@db/kysely";
 import { verifyWebhookSignature, parseWebhookEvent } from "@rtm-client/webhook";
 import { Hono } from "hono";
 

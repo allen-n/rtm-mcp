@@ -21,8 +21,17 @@ export async function fetchSession(): Promise<{
 }
 
 export async function signOut(): Promise<void> {
-  await fetch("/api/auth/sign-out", {
-    method: "POST",
-    credentials: "include",
-  });
+  try {
+    const res = await fetch("/api/auth/sign-out", {
+      method: "POST",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      throw new Error(`Sign out failed: ${res.status}`);
+    }
+  } catch (error) {
+    console.error("Failed to sign out:", error);
+    throw error instanceof Error ? error : new Error("Failed to sign out");
+  }
 }

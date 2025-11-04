@@ -6,7 +6,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // Type checking is done separately, skip during build
+    // Enforce type checking during build (fail on errors)
     ignoreBuildErrors: false,
   },
   webpack: (config, { isServer }) => {

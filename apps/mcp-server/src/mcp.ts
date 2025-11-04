@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { db } from "@db/kysely";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getRtmClient, RtmApiError } from "@rtm-client/client";
@@ -5,10 +6,24 @@ import { getOrCreateTimeline } from "@rtm-client/timeline";
 import { z } from "zod";
 
 // Use Zod schemas for MCP tool definitions
-const mcpServer = new McpServer({
+export const mcpServer = new McpServer({
   name: process.env.MCP_SERVER_NAME || "rtm-mcp-server",
   version: process.env.MCP_SERVER_VERSION || "1.0.0",
 });
+
+const requestContext = new AsyncLocalStorage<{ userId: string }>();
+
+function requireUserId(): string {
+  const store = requestContext.getStore();
+  if (!store?.userId) {
+    throw new Error("Unauthorized: missing MCP user context");
+  }
+  return store.userId;
+}
+
+export function withUserContext<T>(userId: string, callback: () => Promise<T>) {
+  return requestContext.run({ userId }, callback);
+}
 
 // Helper to get user's RTM token
 async function getUserRtmToken(userId: string) {
@@ -28,6 +43,25 @@ async function getUserRtmToken(userId: string) {
   return token.auth_token;
 }
 
+function invalidTokenResponse() {
+  return {
+    content: [
+      {
+        type: "text",
+        text: "Your RTM token is invalid. Please reconnect your account at /rtm/start",
+      },
+    ],
+    isError: true,
+  } as const;
+}
+
+function handleTimelineError(error: unknown) {
+  if (error instanceof Error && error.message.includes("RTM token is invalid")) {
+    return invalidTokenResponse();
+  }
+  return null;
+}
+
 // Resources - provide read-only data access
 mcpServer.registerResource(
   "rtm_lists",
@@ -38,9 +72,7 @@ mcpServer.registerResource(
     mimeType: "application/json",
   },
   async () => {
-    // TODO: Get userId from MCP context
-    const userId = "current_user_id";
-
+    const userId = requireUserId();
     const rtm = getRtmClient();
     const authToken = await getUserRtmToken(userId);
     const lists = await rtm.getLists(authToken);
@@ -67,8 +99,7 @@ mcpServer.registerTool(
     },
   },
   async ({ listId, filter }) => {
-    // TODO: Get userId from MCP context
-    const userId = "current_user_id";
+    const userId = requireUserId();
 
     const rtm = getRtmClient();
     const authToken = await getUserRtmToken(userId);
@@ -109,11 +140,18 @@ mcpServer.registerTool(
     },
   },
   async ({ name, listId, parse }) => {
-    const userId = "current_user_id";
+    const userId = requireUserId();
 
     const rtm = getRtmClient();
     const authToken = await getUserRtmToken(userId);
-    const timeline = await getOrCreateTimeline(userId, authToken);
+    let timeline: string;
+    try {
+      timeline = await getOrCreateTimeline(userId, authToken);
+    } catch (error) {
+      const invalid = handleTimelineError(error);
+      if (invalid) return invalid;
+      throw error;
+    }
 
     try {
       const result = await rtm.addTask(authToken, timeline, name, listId, parse);
@@ -151,11 +189,18 @@ mcpServer.registerTool(
     },
   },
   async ({ listId, taskseriesId, taskId }) => {
-    const userId = "current_user_id";
+    const userId = requireUserId();
 
     const rtm = getRtmClient();
     const authToken = await getUserRtmToken(userId);
-    const timeline = await getOrCreateTimeline(userId, authToken);
+    let timeline: string;
+    try {
+      timeline = await getOrCreateTimeline(userId, authToken);
+    } catch (error) {
+      const invalid = handleTimelineError(error);
+      if (invalid) return invalid;
+      throw error;
+    }
 
     try {
       const result = await rtm.completeTask(
@@ -174,6 +219,9 @@ mcpServer.registerTool(
       };
     } catch (error) {
       if (error instanceof RtmApiError) {
+        if (error.isInvalidToken()) {
+          return invalidTokenResponse();
+        }
         return {
           content: [{
             type: "text",
@@ -200,11 +248,18 @@ mcpServer.registerTool(
     },
   },
   async ({ listId, taskseriesId, taskId, priority }) => {
-    const userId = "current_user_id";
+    const userId = requireUserId();
 
     const rtm = getRtmClient();
     const authToken = await getUserRtmToken(userId);
-    const timeline = await getOrCreateTimeline(userId, authToken);
+    let timeline: string;
+    try {
+      timeline = await getOrCreateTimeline(userId, authToken);
+    } catch (error) {
+      const invalid = handleTimelineError(error);
+      if (invalid) return invalid;
+      throw error;
+    }
 
     try {
       await rtm.setPriority(
@@ -224,6 +279,9 @@ mcpServer.registerTool(
       };
     } catch (error) {
       if (error instanceof RtmApiError) {
+        if (error.isInvalidToken()) {
+          return invalidTokenResponse();
+        }
         return {
           content: [{
             type: "text",
@@ -266,5 +324,3 @@ mcpServer.registerPrompt(
     };
   }
 );
-
-export { mcpServer };

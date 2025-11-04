@@ -1,15 +1,18 @@
 import { auth, getSession } from "@auth/server";
+import type { Session } from "@auth/server";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { mcpServer } from "./mcp.js";
+import { mcpServer, withUserContext } from "./mcp.js";
 import { authRoutes } from "./routes/auth.js";
 import { webhookRoutes } from "./routes/webhook.js";
 
+type SessionResult = NonNullable<Session>;
+
 type Variables = {
-  user: any;
-  session: any;
+  user: SessionResult["user"] | null;
+  session: SessionResult["session"] | null;
 };
 
 const app = new Hono<{ Variables: Variables }>();
@@ -53,33 +56,20 @@ app.route("/rtm", authRoutes());
 app.route("/webhook", webhookRoutes());
 
 // MCP server endpoint using StreamableHTTP
-// Note: MCP endpoint authentication disabled for now - implement session-based auth later
 app.post("/mcp", async (c) => {
-  // TODO: Implement proper session-based authentication with MCP context
-  // const session = c.get("session");
-  // if (!session) {
-  //   return c.json({ error: "Unauthorized" }, 401);
-  // }
+  const user = c.get("user");
+  if (!user?.id) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
 
-  // For now, we'll use a simple approach: delegate to MCP SDK
-  // The MCP SDK will handle the protocol negotiation
   try {
-    const body = await c.req.json();
+    const transport = new StreamableHTTPServerTransport("/mcp", c.req.raw);
 
-    // Create a stateless transport for this request
-    const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
-      enableJsonResponse: true,
+    await withUserContext(user.id, async () => {
+      await mcpServer.connect(transport);
     });
 
-    // Connect the server to the transport
-    await mcpServer.connect(transport);
-
-    // Let the transport handle the MCP protocol
-    // Since we can't directly use handleRequest with Hono's request/response,
-    // we return a placeholder for now
-    // TODO: Properly integrate MCP transport with Hono
-    return c.json({ error: "MCP endpoint requires proper transport integration" }, 501);
+    return transport.response;
   } catch (error) {
     console.error("MCP endpoint error:", error);
     return c.json({ error: "Internal server error" }, 500);

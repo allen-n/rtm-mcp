@@ -9,6 +9,7 @@
     "lint:fix": "eslint src --ext .ts --fix"
   },
   "dependencies": {
+    "bottleneck": "^2.19.5",
     "undici": "^6.21.0"
   },
   "devDependencies": {

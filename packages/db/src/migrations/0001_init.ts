@@ -5,10 +5,17 @@ export async function up(db: Kysely<any>): Promise<void> {
   await db.schema
     .createTable("users")
     .addColumn("id", "text", (col) => col.primaryKey())
-    .addColumn("email", "text")
+    .addColumn("email", "text", (col) => col.notNull().unique())
+    .addColumn("email_verified", "integer", (col) => col.notNull().defaultTo(0))
     .addColumn("name", "text")
     .addColumn("created_at", "text", (col) => col.notNull())
     .addColumn("updated_at", "text", (col) => col.notNull())
+    .execute();
+
+  await db.schema
+    .createIndex("users_email_idx")
+    .on("users")
+    .column("email")
     .execute();
 
   // Sessions table (BetterAuth)

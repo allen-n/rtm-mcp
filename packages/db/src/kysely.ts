@@ -1,12 +1,20 @@
 import fs from "node:fs";
 import path from "node:path";
-import Database from "better-sqlite3";
 import { Kysely, SqliteDialect } from "kysely";
+import Database from "better-sqlite3";
 import type { DB } from "./schema";
 
-const dbPath = process.env.DATABASE_URL?.startsWith("file:")
-  ? process.env.DATABASE_URL.replace("file:", "")
-  : "./data/dev.db";
+const rawUrl = process.env.DATABASE_URL;
+const dbPath = (() => {
+  if (!rawUrl) return "./data/dev.db";
+  if (rawUrl.startsWith("file:")) {
+    return rawUrl.replace(/^file:/, "");
+  }
+  if (rawUrl.startsWith("sqlite://")) {
+    return rawUrl.replace(/^sqlite:\/\//, "");
+  }
+  return rawUrl;
+})();
 
 const dir = path.dirname(dbPath);
 if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });

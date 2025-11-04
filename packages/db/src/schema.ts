@@ -1,7 +1,8 @@
 // User and auth
 export interface User {
   id: string;
-  email: string | null;
+  email: string;
+  email_verified: 0 | 1;
   name: string | null;
   created_at: string; // ISO 8601
   updated_at: string; // ISO 8601

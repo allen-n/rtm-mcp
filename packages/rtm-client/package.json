@@ -6,7 +6,8 @@
   "main": "src/client.ts",
   "scripts": {
     "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix"
+    "lint:fix": "eslint src --ext .ts --fix",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "bottleneck": "^2.19.5",

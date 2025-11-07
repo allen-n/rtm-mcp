@@ -6,7 +6,8 @@
   "main": "src/server.ts",
   "scripts": {
     "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix"
+    "lint:fix": "eslint src --ext .ts --fix",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "better-auth": "^1.0.7"

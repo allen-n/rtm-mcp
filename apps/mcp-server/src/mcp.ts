@@ -109,17 +109,17 @@ mcpServer.registerTool(
 
       return {
         content: [{
-          type: "text",
+          type: "text" as const,
           text: JSON.stringify(tasks, null, 2),
-        }],
+        }] as any,
       };
     } catch (error) {
       if (error instanceof RtmApiError) {
         return {
           content: [{
-            type: "text",
+            type: "text" as const,
             text: `RTM API Error: ${error.message}`,
-          }],
+          }] as any,
           isError: true,
         };
       }
@@ -158,17 +158,17 @@ mcpServer.registerTool(
 
       return {
         content: [{
-          type: "text",
+          type: "text" as const,
           text: `✅ Task created: ${name}\n\n${JSON.stringify(result, null, 2)}`,
-        }],
+        }] as any,
       };
     } catch (error) {
       if (error instanceof RtmApiError && error.isInvalidToken()) {
         return {
           content: [{
-            type: "text",
+            type: "text" as const,
             text: "Your RTM token is invalid. Please reconnect your account at /rtm/start",
-          }],
+          }] as any,
           isError: true,
         };
       }
@@ -213,9 +213,9 @@ mcpServer.registerTool(
 
       return {
         content: [{
-          type: "text",
+          type: "text" as const,
           text: `✅ Task completed!\n\n${JSON.stringify(result, null, 2)}`,
-        }],
+        }] as any,
       };
     } catch (error) {
       if (error instanceof RtmApiError) {
@@ -224,9 +224,9 @@ mcpServer.registerTool(
         }
         return {
           content: [{
-            type: "text",
+            type: "text" as const,
             text: `Failed to complete task: ${error.message}`,
-          }],
+          }] as any,
           isError: true,
         };
       }
@@ -273,9 +273,9 @@ mcpServer.registerTool(
 
       return {
         content: [{
-          type: "text",
+          type: "text" as const,
           text: `✅ Priority updated to ${priority}`,
-        }],
+        }] as any,
       };
     } catch (error) {
       if (error instanceof RtmApiError) {
@@ -284,9 +284,9 @@ mcpServer.registerTool(
         }
         return {
           content: [{
-            type: "text",
+            type: "text" as const,
             text: `Failed to set priority: ${error.message}`,
-          }],
+          }] as any,
           isError: true,
         };
       }

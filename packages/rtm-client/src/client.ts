@@ -105,14 +105,15 @@ export class RtmClient {
    */
   async getToken(frob: string): Promise<{ auth: RtmAuthToken }> {
     const data = await this.call("rtm.auth.getToken", { frob });
+    const auth = data.rsp.auth as any;
     return {
       auth: {
-        token: data.rsp.auth.token,
-        perms: data.rsp.auth.perms,
+        token: auth.token,
+        perms: auth.perms,
         user: {
-          id: data.rsp.auth.user.id,
-          username: data.rsp.auth.user.username,
-          fullname: data.rsp.auth.user.fullname,
+          id: auth.user.id,
+          username: auth.user.username,
+          fullname: auth.user.fullname,
         },
       },
     };
@@ -140,7 +141,7 @@ export class RtmClient {
    */
   async createTimeline(authToken: string): Promise<string> {
     const data = await this.call("rtm.timelines.create", {}, authToken);
-    return data.rsp.timeline;
+    return data.rsp.timeline as string;
   }
 
   /**

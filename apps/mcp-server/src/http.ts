@@ -85,7 +85,7 @@ app.post("/mcp", async (c) => {
 
   await transportReady;
 
-  const nodeRequest = incoming as IncomingMessage & { auth?: unknown };
+  const nodeRequest = incoming as any;
 
   try {
     await withUserContext(user.id, async () => {

@@ -1,6 +1,31 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { config as loadEnv } from "dotenv";
 import { Kysely, PostgresDialect } from "kysely";
 import { Pool } from "pg";
 import type { DB } from "./schema";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function findEnvPath(): string | undefined {
+  let dir = __dirname;
+  const { root } = path.parse(dir);
+  while (dir && dir !== root) {
+    const candidate = path.join(dir, ".env");
+    if (fs.existsSync(candidate)) return candidate;
+    dir = path.dirname(dir);
+  }
+  return undefined;
+}
+
+if (!process.env.DATABASE_URL) {
+  const envPath = findEnvPath();
+  if (envPath) {
+    loadEnv({ path: envPath });
+  }
+}
 
 const buildConnectionString = () => {
   const url = new URL("postgres://localhost");
@@ -21,13 +46,13 @@ const ssl =
 
 const pool = new Pool({
   connectionString,
-  ssl
+  ssl,
 });
 
 export const db = new Kysely<DB>({
   dialect: new PostgresDialect({
-    pool
-  })
+    pool,
+  }),
 });
 
 export type { DB } from "./schema";

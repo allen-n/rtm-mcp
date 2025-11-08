@@ -2,13 +2,27 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Migrator, FileMigrationProvider, sql } from "kysely";
-import { db } from "./kysely.js";
+import { db } from "./kysely";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Use absolute path
 const migrationFolder = path.resolve(__dirname, "migrations");
+
+export const getDevCommand = () => {
+  if (process.argv.length < 3) {
+    return { command: null, otherArgs: [] };
+  }
+  const command = process.argv[2] ?? null;
+  const commandPath = process.argv[1] ?? null;
+  const otherArgs = process.argv.slice(3);
+  if (!command || !commandPath) {
+    return { command: null, otherArgs };
+  }
+
+  return { command, otherArgs };
+};
 
 const migrator = new Migrator({
   db,
@@ -34,9 +48,72 @@ async function waitForDatabase(retries = 10, delayMs = 1000) {
   }
 }
 
+const { command, otherArgs } = getDevCommand();
+const validCommands = [
+  null,
+  "list",
+  "up",
+  "down",
+  "latest",
+  "to",
+  "-h",
+  "--help",
+  "help",
+];
+
 async function main() {
+  if (!command || !validCommands.includes(command)) {
+    console.error(
+      "no command provided, valid commands are:\nlist, up, down, latest, [target_migration_name], -h, --help, help, or no command to run all migrations to latest"
+    );
+    return;
+  }
+
+  function getHelpMessage(): string {
+    return `
+  Available commands:
+    list   - List all migrations
+    up     - Migrate up
+    down   - Migrate down
+    latest - Migrate to the latest version, complete all pending migrations (can also be run with no command)
+    to [target_migration_name] - Migrate to a specific migration
+    -h, --help, help - Display this help message
+    `;
+  }
+
+  if (command === "-h" || command === "--help" || command === "help") {
+    console.log(getHelpMessage());
+    return;
+  }
+
   await waitForDatabase();
-  const { error, results } = await migrator.migrateToLatest();
+  async function runCommand() {
+    if (command === "list") {
+      console.log("listing migrations");
+      const list = await migrator.getMigrations();
+      console.log(list);
+      return { results: [] };
+    }
+
+    if (command === "up") {
+      console.log("migrating up");
+      return await migrator.migrateUp();
+    }
+
+    if (command === "down") {
+      console.log("migrating down");
+      return await migrator.migrateDown();
+    }
+
+    if (command === "to") {
+      const targetMigration = otherArgs[0];
+      console.log("migrating to", targetMigration);
+      return await migrator.migrateTo(targetMigration);
+    }
+    console.log("migrating to latest");
+    return await migrator.migrateToLatest();
+  }
+  const { error, results } = await runCommand();
   results?.forEach((r) => {
     if (r.status === "Success") {
       console.log(`✅ Migration ${r.migrationName} executed successfully`);

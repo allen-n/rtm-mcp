@@ -43,6 +43,8 @@ app.use(
       Boolean
     ),
     credentials: true,
+    exposeHeaders: ["MCP-Session-Id"],
+    allowHeaders: ["Content-Type", "MCP-Session-Id"],
   })
 );
 
@@ -85,11 +87,9 @@ app.post("/mcp", async (c) => {
 
   await transportReady;
 
-  const nodeRequest = incoming as any;
-
   try {
     await withUserContext(user.id, async () => {
-      await streamableTransport.handleRequest(nodeRequest, outgoing);
+      await streamableTransport.handleRequest(incoming, outgoing);
     });
     return new Response(null, {
       status: 200,

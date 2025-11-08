@@ -2,6 +2,7 @@
   "name": "mcp-rtm",
   "private": true,
   "packageManager": "pnpm@9.11.0",
+  "type": "module",
   "scripts": {
     "build": "pnpm -r build",
     "dev:mcp": "pnpm --filter @apps/mcp-server dev",

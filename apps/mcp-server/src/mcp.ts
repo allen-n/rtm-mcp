@@ -47,16 +47,19 @@ function invalidTokenResponse() {
   return {
     content: [
       {
-        type: "text",
+        type: "text" as const,
         text: "Your RTM token is invalid. Please reconnect your account at /rtm/start",
       },
     ],
     isError: true,
-  } as const;
+  };
 }
 
 function handleTimelineError(error: unknown) {
-  if (error instanceof Error && error.message.includes("RTM token is invalid")) {
+  if (
+    error instanceof Error &&
+    error.message.includes("RTM token is invalid")
+  ) {
     return invalidTokenResponse();
   }
   return null;
@@ -78,11 +81,13 @@ mcpServer.registerResource(
     const lists = await rtm.getLists(authToken);
 
     return {
-      contents: [{
-        uri: "rtm://lists",
-        mimeType: "application/json",
-        text: JSON.stringify(lists, null, 2),
-      }],
+      contents: [
+        {
+          uri: "rtm://lists",
+          mimeType: "application/json",
+          text: JSON.stringify(lists, null, 2),
+        },
+      ],
     };
   }
 );
@@ -95,7 +100,10 @@ mcpServer.registerTool(
     description: "Retrieve tasks from Remember The Milk",
     inputSchema: {
       listId: z.string().optional().describe("Specific list ID to filter by"),
-      filter: z.string().optional().describe("RTM filter syntax (e.g., 'priority:1')"),
+      filter: z
+        .string()
+        .optional()
+        .describe("RTM filter syntax (e.g., 'priority:1')"),
     },
   },
   async ({ listId, filter }) => {
@@ -108,18 +116,22 @@ mcpServer.registerTool(
       const tasks = await rtm.getTasks(authToken, listId, filter);
 
       return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify(tasks, null, 2),
-        }] as any,
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(tasks, null, 2),
+          },
+        ],
       };
     } catch (error) {
       if (error instanceof RtmApiError) {
         return {
-          content: [{
-            type: "text" as const,
-            text: `RTM API Error: ${error.message}`,
-          }] as any,
+          content: [
+            {
+              type: "text" as const,
+              text: `RTM API Error: ${error.message}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -136,7 +148,11 @@ mcpServer.registerTool(
     inputSchema: {
       name: z.string().describe("Task name (supports Smart Add syntax)"),
       listId: z.string().optional().describe("List ID to add task to"),
-      parse: z.boolean().optional().default(true).describe("Parse Smart Add syntax"),
+      parse: z
+        .boolean()
+        .optional()
+        .default(true)
+        .describe("Parse Smart Add syntax"),
     },
   },
   async ({ name, listId, parse }) => {
@@ -154,21 +170,38 @@ mcpServer.registerTool(
     }
 
     try {
-      const result = await rtm.addTask(authToken, timeline, name, listId, parse);
+      const result = await rtm.addTask(
+        authToken,
+        timeline,
+        name,
+        listId,
+        parse
+      );
 
       return {
-        content: [{
-          type: "text" as const,
-          text: `✅ Task created: ${name}\n\n${JSON.stringify(result, null, 2)}`,
-        }] as any,
+        content: [
+          {
+            type: "text",
+            text: `✅ Task created: ${name}\n\n${JSON.stringify(
+              result,
+              null,
+              2
+            )}`,
+          },
+        ],
       };
     } catch (error) {
-      if (error instanceof RtmApiError && error.isInvalidToken()) {
+      if (error instanceof RtmApiError) {
+        if (error.isInvalidToken()) {
+          return invalidTokenResponse();
+        }
         return {
-          content: [{
-            type: "text" as const,
-            text: "Your RTM token is invalid. Please reconnect your account at /rtm/start",
-          }] as any,
+          content: [
+            {
+              type: "text",
+              text: `Failed to add task: ${error.message}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -212,10 +245,12 @@ mcpServer.registerTool(
       );
 
       return {
-        content: [{
-          type: "text" as const,
-          text: `✅ Task completed!\n\n${JSON.stringify(result, null, 2)}`,
-        }] as any,
+        content: [
+          {
+            type: "text" as const,
+            text: `✅ Task completed!\n\n${JSON.stringify(result, null, 2)}`,
+          },
+        ],
       };
     } catch (error) {
       if (error instanceof RtmApiError) {
@@ -223,10 +258,12 @@ mcpServer.registerTool(
           return invalidTokenResponse();
         }
         return {
-          content: [{
-            type: "text" as const,
-            text: `Failed to complete task: ${error.message}`,
-          }] as any,
+          content: [
+            {
+              type: "text" as const,
+              text: `Failed to complete task: ${error.message}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -239,7 +276,8 @@ mcpServer.registerTool(
   "set_priority",
   {
     title: "Set Task Priority",
-    description: "Set the priority of a task (1=highest, 2=high, 3=normal, N=none)",
+    description:
+      "Set the priority of a task (1=highest, 2=high, 3=normal, N=none)",
     inputSchema: {
       listId: z.string(),
       taskseriesId: z.string(),
@@ -272,10 +310,12 @@ mcpServer.registerTool(
       );
 
       return {
-        content: [{
-          type: "text" as const,
-          text: `✅ Priority updated to ${priority}`,
-        }] as any,
+        content: [
+          {
+            type: "text" as const,
+            text: `✅ Priority updated to ${priority}`,
+          },
+        ],
       };
     } catch (error) {
       if (error instanceof RtmApiError) {
@@ -283,10 +323,12 @@ mcpServer.registerTool(
           return invalidTokenResponse();
         }
         return {
-          content: [{
-            type: "text" as const,
-            text: `Failed to set priority: ${error.message}`,
-          }] as any,
+          content: [
+            {
+              type: "text" as const,
+              text: `Failed to set priority: ${error.message}`,
+            },
+          ],
           isError: true,
         };
       }
@@ -304,7 +346,10 @@ mcpServer.registerPrompt(
     argsSchema: {
       taskName: z.string().describe("Name of the task"),
       priority: z.enum(["1", "2", "3"]).optional().describe("Priority level"),
-      dueDate: z.string().optional().describe("Due date (e.g., 'today', 'tomorrow', '2024-12-31')"),
+      dueDate: z
+        .string()
+        .optional()
+        .describe("Due date (e.g., 'today', 'tomorrow', '2024-12-31')"),
     },
   },
   ({ taskName, priority, dueDate }) => {
@@ -314,13 +359,15 @@ mcpServer.registerPrompt(
     if (dueDate) smartAddText += ` ^${dueDate}`;
 
     return {
-      messages: [{
-        role: "user",
-        content: {
-          type: "text",
-          text: `Create this task in RTM using Smart Add syntax: "${smartAddText}"`,
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: `Create this task in RTM using Smart Add syntax: "${smartAddText}"`,
+          },
         },
-      }],
+      ],
     };
   }
 );

@@ -105,7 +105,7 @@ export class RtmClient {
    */
   async getToken(frob: string): Promise<{ auth: RtmAuthToken }> {
     const data = await this.call("rtm.auth.getToken", { frob });
-    const auth = data.rsp.auth as any;
+    const auth = data.rsp.auth as RtmAuthToken;
     return {
       auth: {
         token: auth.token,

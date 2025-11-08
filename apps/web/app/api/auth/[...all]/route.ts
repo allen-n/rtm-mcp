@@ -1,6 +1,7 @@
-import { auth } from "@auth/server";
+import { auth } from "@packages/auth/src/server";
 
-// Handle BetterAuth requests in Next.js
+// We need to manually handle the requests since better-auth/next-js isn't available
+// The auth.handler works directly with Request/Response
 export async function GET(request: Request) {
   return auth.handler(request);
 }

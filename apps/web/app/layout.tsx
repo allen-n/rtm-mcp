@@ -1,4 +1,5 @@
 import React from "react";
+import { AuthProvider } from "../components/auth-provider";
 
 export const metadata = {
   title: "MCP-RTM Portal",
@@ -13,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

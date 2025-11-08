@@ -1,10 +1,17 @@
-// Client-side helpers for web app
+// Client-side authentication utilities for web app
+import { createAuthClient } from "better-auth/react";
+import type { SessionUser } from "./types";
 
-export async function fetchSession(): Promise<{
-  id: string;
-  email?: string;
-  name?: string;
-} | null> {
+// Create the auth client for React components
+export const authClient = createAuthClient({
+  baseURL: process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8787",
+});
+
+// Re-export useful types
+export type { SessionUser };
+
+// Legacy helper functions (can be replaced with authClient hooks)
+export async function fetchSession(): Promise<SessionUser | null> {
   try {
     const res = await fetch("/api/auth/session", {
       credentials: "include",

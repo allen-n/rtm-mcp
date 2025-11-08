@@ -13,6 +13,36 @@ export const auth = betterAuth({
 
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:8787",
 
+  // Map BetterAuth's expected field names to our snake_case database columns
+  user: {
+    fields: {
+      emailVerified: "email_verified",
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+    },
+  },
+  session: {
+    fields: {
+      userId: "user_id",
+      expiresAt: "expires_at",
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+    },
+    expiresIn: 60 * 60 * 24 * 7, // 7 days
+    updateAge: 60 * 60 * 24, // Update session every 24 hours
+  },
+  account: {
+    fields: {
+      userId: "user_id",
+      accountId: "provider_account_id",
+      providerId: "provider",
+      accessToken: "access_token",
+      refreshToken: "refresh_token",
+      expiresAt: "expires_at",
+      createdAt: "created_at",
+    },
+  },
+
   // Enable email/password authentication
   emailAndPassword: {
     enabled: true,
@@ -30,12 +60,6 @@ export const auth = betterAuth({
     //   clientId: process.env.GOOGLE_CLIENT_ID!,
     //   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     // },
-  },
-
-  // Session configuration
-  session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 days
-    updateAge: 60 * 60 * 24, // Update session every 24 hours
   },
 
   // CORS for web app

@@ -62,9 +62,9 @@ const validCommands = [
 ];
 
 async function main() {
-  if (!command || !validCommands.includes(command)) {
+  if (!validCommands.includes(command)) {
     console.error(
-      "no command provided, valid commands are:\nlist, up, down, latest, [target_migration_name], -h, --help, help, or no command to run all migrations to latest"
+      `Got: ${command}, which is not a valid command. Valid commands are:\nlist, up, down, latest, [target_migration_name], -h, --help, help, or no command to run all migrations to latest`
     );
     return;
   }

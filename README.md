@@ -65,10 +65,14 @@ RTM_WEBHOOK_SECRET=$(openssl rand -hex 32)
 POSTGRES_USER=rtm
 POSTGRES_PASSWORD=rtm
 POSTGRES_DB=rtmdb
+POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-DATABASE_URL=postgres://rtm:rtm@localhost:5432/rtmdb
 POSTGRES_SSL=false
+# Optional override (otherwise derived from the values above)
+# DATABASE_URL=postgres://rtm:rtm@localhost:5432/rtmdb
 ```
+
+If `DATABASE_URL` is omitted, the server builds it from the `POSTGRES_*` values (so changing `POSTGRES_PORT` automatically updates local clients), while the Docker services continue using their internal `postgres` hostname.
 
 ### 3. Start Postgres (Docker recommended)
 

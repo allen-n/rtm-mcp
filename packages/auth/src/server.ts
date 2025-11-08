@@ -1,10 +1,10 @@
-import { db } from "@db/kysely";
+import { pool} from "@db/kysely";
 import { betterAuth } from "better-auth";
 import type { Session, SessionUser } from "./types";
 
 // Configure authentication with OAuth and email/password support
 export const auth = betterAuth({
-  database: db, // Kysely instance directly (BetterAuth auto-detects)
+  database: pool, // postgres pool directly (BetterAuth auto-detects)
 
   appName: process.env.APP_NAME || "MCP-RTM",
 

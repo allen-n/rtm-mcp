@@ -1,15 +1,34 @@
-version: "3.9"
-
 services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rtm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rtm}
+      POSTGRES_DB: ${POSTGRES_DB:-rtmdb}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-rtm} -d ${POSTGRES_DB:-rtmdb}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   migrations:
     build:
       context: .
       dockerfile: packages/db/Dockerfile
     environment:
-      DATABASE_URL: file:/app/data/dev.db
-    volumes:
-      - sqlite_data:/app/data
-    command: ["pnpm","--filter","@packages/db","migrate"]
+      DATABASE_URL: postgres://${POSTGRES_USER:-rtm}:${POSTGRES_PASSWORD:-rtm}@postgres:5432/${POSTGRES_DB:-rtmdb}
+    command: ["pnpm", "--filter", "@packages/db", "migrate"]
+    depends_on:
+      - postgres
 
   mcp:
     build:
@@ -22,8 +41,8 @@ services:
       RTM_SHARED_SECRET: ${RTM_SHARED_SECRET}
       RTM_CALLBACK_URL: http://localhost:8787/rtm/callback
       RTM_WEBHOOK_SECRET: ${RTM_WEBHOOK_SECRET}
-      DATABASE_URL: file:/app/data/dev.db
-      DB_DIALECT: sqlite
+      DATABASE_URL: postgres://${POSTGRES_USER:-rtm}:${POSTGRES_PASSWORD:-rtm}@postgres:5432/${POSTGRES_DB:-rtmdb}
+      DB_DIALECT: postgres
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: http://localhost:8787
       MCP_SERVER_NAME: ${MCP_SERVER_NAME:-rtm-mcp-server}
@@ -33,8 +52,7 @@ services:
       - "8787:8787"
     depends_on:
       - migrations
-    volumes:
-      - sqlite_data:/app/data
+      - postgres
 
   web:
     build:
@@ -48,4 +66,4 @@ services:
       - mcp
 
 volumes:
-  sqlite_data:
+  postgres_data:

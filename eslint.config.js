@@ -1,8 +1,13 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import eslint from "@eslint/js";
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsparser from "@typescript-eslint/parser";
 import importPlugin from "eslint-plugin-import";
 import prettierConfig from "eslint-config-prettier";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default [
   // Base configuration for all files
@@ -18,6 +23,7 @@ export default [
       "**/coverage/**",
       "**/*.config.js",
       "**/*.config.mjs",
+      "packages/db/src/generated-types.ts",
     ],
   },
 
@@ -29,6 +35,7 @@ export default [
       parserOptions: {
         ecmaVersion: "latest",
         sourceType: "module",
+        tsconfigRootDir: __dirname,
         project: [
           "./tsconfig.base.json",
           "./packages/*/tsconfig.json",

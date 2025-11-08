@@ -10,7 +10,7 @@
     "db:generate": "pnpm --filter @packages/db generate",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
-    "typecheck": "pnpm -r exec tsc --noEmit"
+    "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.0.0",

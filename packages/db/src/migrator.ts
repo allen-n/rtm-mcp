@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Migrator, FileMigrationProvider } from "kysely";
+import { Migrator, FileMigrationProvider, sql } from "kysely";
 import { db } from "./kysely.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,9 +19,24 @@ const migrator = new Migrator({
   }),
 });
 
-async function main() {
-  const { error, results } = await migrator.migrateToLatest();
+async function waitForDatabase(retries = 10, delayMs = 1000) {
+  for (let attempt = 1; attempt <= retries; attempt += 1) {
+    try {
+      await sql`select 1`.execute(db);
+      return;
+    } catch (err) {
+      if (attempt === retries) throw err;
+      console.log(
+        `Database not ready (attempt ${attempt}/${retries}), retrying...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+}
 
+async function main() {
+  await waitForDatabase();
+  const { error, results } = await migrator.migrateToLatest();
   results?.forEach((r) => {
     if (r.status === "Success") {
       console.log(`✅ Migration ${r.migrationName} executed successfully`);

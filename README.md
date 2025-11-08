@@ -60,15 +60,31 @@ BETTER_AUTH_SECRET=$(openssl rand -hex 32)
 
 # Generate a random secret for webhook verification (optional)
 RTM_WEBHOOK_SECRET=$(openssl rand -hex 32)
+
+# Local Postgres defaults (change if you already run Postgres)
+POSTGRES_USER=rtm
+POSTGRES_PASSWORD=rtm
+POSTGRES_DB=rtmdb
+POSTGRES_PORT=5432
+DATABASE_URL=postgres://rtm:rtm@localhost:5432/rtmdb
+POSTGRES_SSL=false
 ```
 
-### 3. Run Database Migration
+### 3. Start Postgres (Docker recommended)
+
+```bash
+docker compose up -d postgres
+```
+
+> The default credentials live in `.env`. Change `POSTGRES_PORT` if you already run Postgres locally.
+
+### 4. Run Database Migration
 
 ```bash
 pnpm migrate
 ```
 
-### 4. Start Development Servers
+### 5. Start Development Servers
 
 ```bash
 # Terminal 1: MCP Server
@@ -81,13 +97,13 @@ pnpm dev:web
 The MCP server runs on `http://localhost:8787`  
 The web portal runs on `http://localhost:3000`
 
-### 5. Connect Your RTM Account
+### 6. Connect Your RTM Account
 
 1. Visit `http://localhost:8787/rtm/start`
 2. Authorize the application on Remember The Milk
 3. You'll be redirected back with a success message
 
-### 6. Test with MCP Inspector
+### 7. Test with MCP Inspector
 
 ```bash
 npx @modelcontextprotocol/inspector node apps/mcp-server/dist/index.js
@@ -184,9 +200,12 @@ pnpm --filter @apps/mcp-server build
 # Run pending migrations
 pnpm migrate
 
+# Refresh generated Kysely types after schema changes
+pnpm --filter @packages/db generate
+
 # Create new migration
 cd packages/db
-# Add new .ts file in src/migrations/ with format: NNNN_description.ts
+# Add new .ts file in src/migrations/ with format: <UTC_Timestamp>_description.ts
 ```
 
 ## Deployment
@@ -236,13 +255,12 @@ This differs from storing a single permanent timeline per user.
 
 ### Database Choice
 
-Using SQLite with Kysely for:
-- Zero-configuration development
-- Easy Railway deployment
-- Type-safe queries
-- Simple migrations
+PostgreSQL (via the official Docker image) is the default backing store:
+- Works well locally thanks to `docker compose up -d postgres`
+- Shared across services through a single `DATABASE_URL`
+- Still powered by type-safe queries and migrations through Kysely
 
-For production at scale, consider PostgreSQL.
+Need remote hosting? Point `DATABASE_URL` at your managed Postgres, set `POSTGRES_SSL=true`, and skip the local container.
 
 ### Monorepo Structure
 

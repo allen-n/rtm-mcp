@@ -6,12 +6,11 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .createTable("users")
     .addColumn("id", "text", (col) => col.primaryKey())
     .addColumn("email", "text", (col) => col.notNull().unique())
-    // BetterAuth expects camelCase column names when using adapters that map directly
-    .addColumn("emailVerified", "integer", (col) => col.notNull().defaultTo(0))
+    .addColumn("email_verified", "integer", (col) => col.notNull().defaultTo(0))
     .addColumn("name", "text")
     .addColumn("image", "text")
-    .addColumn("createdAt", "text", (col) => col.notNull())
-    .addColumn("updatedAt", "text", (col) => col.notNull())
+    .addColumn("created_at", "text", (col) => col.notNull())
+    .addColumn("updated_at", "text", (col) => col.notNull())
     .execute();
 
   await db.schema
@@ -24,17 +23,16 @@ export async function up(db: Kysely<unknown>): Promise<void> {
   await db.schema
     .createTable("sessions")
     .addColumn("id", "text", (col) => col.primaryKey())
-    .addColumn("userId", "text", (col) => col.notNull())
-    .addColumn("expiresAt", "text", (col) => col.notNull())
+    .addColumn("user_id", "text", (col) => col.notNull())
+    .addColumn("expires_at", "text", (col) => col.notNull())
     .addColumn("token", "text", (col) => col.notNull())
-    .addColumn("createdAt", "text", (col) => col.notNull())
-    // BetterAuth may store/update these optional fields; include them for compatibility
-    .addColumn("updatedAt", "text")
-    .addColumn("ipAddress", "text")
-    .addColumn("userAgent", "text")
+    .addColumn("created_at", "text", (col) => col.notNull())
+    .addColumn("updated_at", "text")
+    .addColumn("ip_address", "text")
+    .addColumn("user_agent", "text")
     .addForeignKeyConstraint(
       "sessions_user_fk",
-      ["userId"],
+      ["user_id"],
       "users",
       ["id"],
       (fk) => fk.onDelete("cascade")
@@ -45,17 +43,17 @@ export async function up(db: Kysely<unknown>): Promise<void> {
   await db.schema
     .createTable("accounts")
     .addColumn("id", "text", (col) => col.primaryKey())
-    .addColumn("userId", "text", (col) => col.notNull())
+    .addColumn("user_id", "text", (col) => col.notNull())
     .addColumn("provider", "text", (col) => col.notNull())
-    .addColumn("providerAccountId", "text", (col) => col.notNull())
-    .addColumn("accessToken", "text")
-    .addColumn("refreshToken", "text")
-    .addColumn("expiresAt", "text")
-    .addColumn("createdAt", "text", (col) => col.notNull())
-    .addColumn("updatedAt", "text")
+    .addColumn("provider_account_id", "text", (col) => col.notNull())
+    .addColumn("access_token", "text")
+    .addColumn("refresh_token", "text")
+    .addColumn("expires_at", "text")
+    .addColumn("created_at", "text", (col) => col.notNull())
+    .addColumn("updated_at", "text")
     .addForeignKeyConstraint(
       "accounts_user_fk",
-      ["userId"],
+      ["user_id"],
       "users",
       ["id"],
       (fk) => fk.onDelete("cascade")
@@ -64,17 +62,17 @@ export async function up(db: Kysely<unknown>): Promise<void> {
 
   // RTM tokens
   await db.schema
-    .createTable("rtmTokens")
-    .addColumn("userId", "text", (col) => col.notNull().primaryKey())
-    .addColumn("authToken", "text", (col) => col.notNull())
+    .createTable("rtm_tokens")
+    .addColumn("user_id", "text", (col) => col.notNull().primaryKey())
+    .addColumn("auth_token", "text", (col) => col.notNull())
     .addColumn("perms", "text", (col) => col.notNull())
     .addColumn("status", "text", (col) => col.notNull())
     .addColumn("username", "text")
     .addColumn("fullname", "text")
-    .addColumn("updatedAt", "text", (col) => col.notNull())
+    .addColumn("updated_at", "text", (col) => col.notNull())
     .addForeignKeyConstraint(
-      "rtmTokens_user_fk",
-      ["userId"],
+      "rtm_tokens_user_fk",
+      ["user_id"],
       "users",
       ["id"],
       (fk) => fk.onDelete("cascade")
@@ -83,15 +81,15 @@ export async function up(db: Kysely<unknown>): Promise<void> {
 
   // Timeline management - session-based with expiry
   await db.schema
-    .createTable("rtmTimelines")
+    .createTable("rtm_timelines")
     .addColumn("id", "text", (col) => col.primaryKey())
-    .addColumn("userId", "text", (col) => col.notNull())
+    .addColumn("user_id", "text", (col) => col.notNull())
     .addColumn("timeline", "text", (col) => col.notNull())
-    .addColumn("createdAt", "text", (col) => col.notNull())
-    .addColumn("expiresAt", "text", (col) => col.notNull())
+    .addColumn("created_at", "text", (col) => col.notNull())
+    .addColumn("expires_at", "text", (col) => col.notNull())
     .addForeignKeyConstraint(
-      "rtmTimelines_user_fk",
-      ["userId"],
+      "rtm_timelines_user_fk",
+      ["user_id"],
       "users",
       ["id"],
       (fk) => fk.onDelete("cascade")
@@ -99,28 +97,28 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .execute();
 
   await db.schema
-    .createIndex("rtmTimelines_user_idx")
-    .on("rtmTimelines")
-    .column("userId")
+    .createIndex("rtm_timelines_user_idx")
+    .on("rtm_timelines")
+    .column("user_id")
     .execute();
 
   // Webhook subscriptions
   await db.schema
-    .createTable("webhookSubs")
+    .createTable("webhook_subs")
     .addColumn("id", "text", (col) => col.primaryKey())
-    .addColumn("userId", "text", (col) => col.notNull())
-    .addColumn("subscriptionId", "text", (col) => col.notNull())
+    .addColumn("user_id", "text", (col) => col.notNull())
+    .addColumn("subscription_id", "text", (col) => col.notNull())
     .addColumn("topics", "text", (col) => col.notNull())
     .addColumn("filter", "text")
     .addColumn("url", "text", (col) => col.notNull())
-    .addColumn("leaseSeconds", "integer")
-    .addColumn("expiresAt", "text")
+    .addColumn("lease_seconds", "integer")
+    .addColumn("expires_at", "text")
     .addColumn("status", "text", (col) => col.notNull())
-    .addColumn("createdAt", "text", (col) => col.notNull())
-    .addColumn("updatedAt", "text", (col) => col.notNull())
+    .addColumn("created_at", "text", (col) => col.notNull())
+    .addColumn("updated_at", "text", (col) => col.notNull())
     .addForeignKeyConstraint(
-      "webhookSubs_user_fk",
-      ["userId"],
+      "webhook_subs_user_fk",
+      ["user_id"],
       "users",
       ["id"],
       (fk) => fk.onDelete("cascade")
@@ -128,16 +126,16 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .execute();
 
   await db.schema
-    .createIndex("webhookSubs_user_idx")
-    .on("webhookSubs")
-    .column("userId")
+    .createIndex("webhook_subs_user_idx")
+    .on("webhook_subs")
+    .column("user_id")
     .execute();
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {
-  await db.schema.dropTable("webhookSubs").execute();
-  await db.schema.dropTable("rtmTimelines").execute();
-  await db.schema.dropTable("rtmTokens").execute();
+  await db.schema.dropTable("webhook_subs").execute();
+  await db.schema.dropTable("rtm_timelines").execute();
+  await db.schema.dropTable("rtm_tokens").execute();
   await db.schema.dropTable("accounts").execute();
   await db.schema.dropTable("sessions").execute();
   await db.schema.dropTable("users").execute();

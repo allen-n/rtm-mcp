@@ -13,7 +13,7 @@ export const auth = betterAuth({
 
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:8787",
 
-  // Map BetterAuth's expected field names to our snake_case database columns
+  // Map BetterAuth's camelCase field names to our snake_case database columns
   user: {
     fields: {
       emailVerified: "email_verified",
@@ -21,16 +21,20 @@ export const auth = betterAuth({
       updatedAt: "updated_at",
     },
   },
+
   session: {
     fields: {
       userId: "user_id",
       expiresAt: "expires_at",
       createdAt: "created_at",
       updatedAt: "updated_at",
+      ipAddress: "ip_address",
+      userAgent: "user_agent",
     },
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // Update session every 24 hours
   },
+
   account: {
     fields: {
       userId: "user_id",
@@ -40,6 +44,7 @@ export const auth = betterAuth({
       refreshToken: "refresh_token",
       expiresAt: "expires_at",
       createdAt: "created_at",
+      updatedAt: "updated_at",
     },
   },
 

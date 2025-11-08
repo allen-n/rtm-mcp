@@ -10,75 +10,75 @@ export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   : ColumnType<T, T | undefined, T>;
 
 export interface Accounts {
-  accessToken: string | null;
-  createdAt: string;
-  expiresAt: string | null;
+  access_token: string | null;
+  created_at: string;
+  expires_at: string | null;
   id: string;
   provider: string;
-  providerAccountId: string;
-  refreshToken: string | null;
-  updatedAt: string | null;
-  userId: string;
+  provider_account_id: string;
+  refresh_token: string | null;
+  updated_at: string | null;
+  user_id: string;
 }
 
 export interface RtmTimelines {
-  createdAt: string;
-  expiresAt: string;
+  created_at: string;
+  expires_at: string;
   id: string;
   timeline: string;
-  userId: string;
+  user_id: string;
 }
 
 export interface RtmTokens {
-  authToken: string;
+  auth_token: string;
   fullname: string | null;
   perms: string;
   status: string;
-  updatedAt: string;
-  userId: string;
+  updated_at: string;
+  user_id: string;
   username: string | null;
 }
 
 export interface Sessions {
-  createdAt: string;
-  expiresAt: string;
+  created_at: string;
+  expires_at: string;
   id: string;
-  ipAddress: string | null;
+  ip_address: string | null;
   token: string;
-  updatedAt: string | null;
-  userAgent: string | null;
-  userId: string;
+  updated_at: string | null;
+  user_agent: string | null;
+  user_id: string;
 }
 
 export interface Users {
-  createdAt: string;
+  created_at: string;
   email: string;
-  emailVerified: Generated<number>;
+  email_verified: Generated<number>;
   id: string;
   image: string | null;
   name: string | null;
-  updatedAt: string;
+  updated_at: string;
 }
 
 export interface WebhookSubs {
-  createdAt: string;
-  expiresAt: string | null;
+  created_at: string;
+  expires_at: string | null;
   filter: string | null;
   id: string;
-  leaseSeconds: number | null;
+  lease_seconds: number | null;
   status: string;
-  subscriptionId: string;
+  subscription_id: string;
   topics: string;
-  updatedAt: string;
+  updated_at: string;
   url: string;
-  userId: string;
+  user_id: string;
 }
 
 export interface DB {
   accounts: Accounts;
-  rtmTimelines: RtmTimelines;
-  rtmTokens: RtmTokens;
+  rtm_timelines: RtmTimelines;
+  rtm_tokens: RtmTokens;
   sessions: Sessions;
   users: Users;
-  webhookSubs: WebhookSubs;
+  webhook_subs: WebhookSubs;
 }

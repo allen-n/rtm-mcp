@@ -30,6 +30,11 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadData() {
       try {
+        // Wait for session to finish loading before checking authentication
+        if (session.isPending) {
+          return; // Still loading, show spinner below
+        }
+
         // Check if user is authenticated
         if (!session.data?.user) {
           router.push("/login");
@@ -55,7 +60,7 @@ export default function DashboardPage() {
     }
 
     loadData();
-  }, [router, session.data]);
+  }, [router, session.data, session.isPending]);
 
   const handleSignOut = async () => {
     try {
@@ -108,7 +113,8 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading) {
+  // Show loading state while session is being fetched
+  if (session.isPending || loading) {
     return (
       <main style={{ maxWidth: "48rem", margin: "4rem auto", padding: "2rem" }}>
         <p>Loading...</p>

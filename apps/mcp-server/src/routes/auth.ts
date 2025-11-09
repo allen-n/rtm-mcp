@@ -71,14 +71,26 @@ export function authRoutes() {
       // In desktop flow, retrieve the frob we stored earlier
       const tokenRecord = await db
         .selectFrom("rtm_tokens")
-        .select(["auth_token"])
+        .select(["auth_token", "status"])
         .where("user_id", "=", user.id)
-        .where("status", "=", "pending")
         .executeTakeFirst();
 
       if (!tokenRecord) {
         return c.text(
-          "No pending authorization found. Please start the auth flow again.",
+          "No authorization found. Please start the auth flow again.",
+          400
+        );
+      }
+
+      // If already active, the auth was already completed - return success
+      if (tokenRecord.status === "active") {
+        return c.json({ success: true, message: "Already connected" });
+      }
+
+      // Must be pending to continue
+      if (tokenRecord.status !== "pending") {
+        return c.text(
+          "Invalid authorization status. Please start the auth flow again.",
           400
         );
       }

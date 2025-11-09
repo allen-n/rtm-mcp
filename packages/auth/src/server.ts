@@ -33,6 +33,10 @@ export const auth = betterAuth({
     },
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // Update session every 24 hours
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes - reduces database calls and improves session reliability
+    },
   },
 
   account: {
@@ -73,6 +77,15 @@ export const auth = betterAuth({
     "http://localhost:3000",
     process.env.WEB_APP_URL || "",
   ].filter(Boolean),
+
+  // Advanced cookie configuration for cross-origin support
+  advanced: {
+    defaultCookieAttributes: {
+      sameSite: "none", // Required for cross-origin cookies between localhost:3000 and localhost:8787
+      secure: true, // Required with sameSite=none (browsers allow secure cookies on localhost)
+      httpOnly: true, // Prevent XSS attacks
+    },
+  },
 });
 
 // Helper to extract session from request

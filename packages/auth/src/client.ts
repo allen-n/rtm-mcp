@@ -3,8 +3,12 @@ import { createAuthClient } from "better-auth/react";
 import type { SessionUser } from "./types";
 
 // Create the auth client for React components
+// Point directly to the Hono backend server
 export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8787",
+  fetchOptions: {
+    credentials: "include", // Ensure cookies are sent with cross-origin requests
+  },
 });
 
 // Re-export useful types

@@ -44,7 +44,7 @@ app.use(
     ),
     credentials: true,
     exposeHeaders: ["MCP-Session-Id"],
-    allowHeaders: ["Content-Type", "MCP-Session-Id", "x-api-key"],
+    allowHeaders: ["Content-Type", "MCP-Session-Id", "x-api-key", "Accept"],
   })
 );
 
@@ -74,11 +74,13 @@ app.route("/rtm", authRoutes());
 app.route("/webhook", webhookRoutes());
 
 app.post("/mcp", async (c) => {
+  console.log("🔍 MCP request received");
   let userId: string | null = null;
 
   // Try API key authentication first
   const apiKeyHeader = c.req.header("x-api-key");
   if (apiKeyHeader) {
+    console.log("🔑 API key found in header");
     try {
       const apiKeyResult = await auth.api.verifyApiKey({
         body: { key: apiKeyHeader },
@@ -86,10 +88,15 @@ app.post("/mcp", async (c) => {
 
       if (apiKeyResult?.valid && apiKeyResult.key) {
         userId = apiKeyResult.key.userId;
+        console.log("✅ API key valid, userId:", userId);
+      } else {
+        console.log("❌ API key invalid");
       }
     } catch (error) {
       console.error("API key verification error:", error);
     }
+  } else {
+    console.log("ℹ️ No API key in header, trying session auth");
   }
 
   // Fall back to session authentication
@@ -97,11 +104,15 @@ app.post("/mcp", async (c) => {
     const user = c.get("user");
     if (user?.id) {
       userId = user.id;
+      console.log("✅ Session auth successful, userId:", userId);
+    } else {
+      console.log("❌ No session user found");
     }
   }
 
   // Require authentication via either method
   if (!userId) {
+    console.log("🚫 Unauthorized - no valid authentication");
     return c.json({ error: "Unauthorized" }, 401);
   }
 
@@ -111,18 +122,24 @@ app.post("/mcp", async (c) => {
     return c.json({ error: "MCP transport unavailable" }, 500);
   }
 
+  console.log("⏳ Waiting for transport ready...");
   await transportReady;
+  console.log("✅ Transport ready");
 
+  console.log("🚀 Starting MCP transport handler");
   try {
     await withUserContext(userId, async () => {
+      console.log("📡 Handling MCP request in user context");
       await streamableTransport.handleRequest(incoming, outgoing);
+      console.log("✅ MCP handleRequest completed");
     });
+    console.log("✅ MCP request completed successfully");
     return new Response(null, {
       status: 200,
       headers: { [MCP_ALREADY_SENT_HEADER]: "true" },
     });
   } catch (error) {
-    console.error("MCP endpoint error:", error);
+    console.error("❌ MCP endpoint error:", error);
 
     if (!outgoing.writableEnded) {
       outwardErrorResponse(outgoing);

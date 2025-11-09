@@ -35,7 +35,6 @@ export function ApiKeySection() {
 
       if (res.ok) {
         const data = await res.json();
-        console.log("Fetched API keys:", data);
         setApiKeys(data || []);
       }
     } catch (error) {

@@ -38,17 +38,29 @@ npm install -g mcp-remote
 
 ### macOS
 
-1. Open the Claude Desktop configuration file:
+1. Find your current Node.js path (should be v22 or higher):
+   ```bash
+   which node
+   # Example output: /Users/yourname/.nvm/versions/node/v22.21.0/bin/node
+   ```
+
+2. Get the npx path from the same directory:
+   ```bash
+   # If your node is at /Users/yourname/.nvm/versions/node/v22.21.0/bin/node
+   # Then npx is at /Users/yourname/.nvm/versions/node/v22.21.0/bin/npx
+   ```
+
+3. Open the Claude Desktop configuration file:
    ```bash
    code ~/Library/Application\ Support/Claude/claude_desktop_config.json
    ```
 
-2. Add the RTM MCP server configuration:
+4. Add the RTM MCP server configuration with the **full path to npx**:
    ```json
    {
      "mcpServers": {
        "rtm": {
-         "command": "npx",
+         "command": "/Users/yourname/.nvm/versions/node/v22.21.0/bin/npx",
          "args": [
            "mcp-remote",
            "http://localhost:8787/mcp",
@@ -60,8 +72,12 @@ npm install -g mcp-remote
    }
    ```
 
-3. Replace `YOUR_API_KEY_HERE` with the API key you generated in Step 2
-4. If your server is running on a different host/port, update the URL accordingly
+5. **Important:** Replace:
+   - The `command` path with your actual npx path from step 2
+   - `YOUR_API_KEY_HERE` with the API key you generated in Step 2
+   - The URL if your server is running on a different host/port
+
+**Why use the full path?** Claude Desktop doesn't inherit your shell's PATH or nvm configuration, so it may find an older Node.js version. Using the full path ensures it uses the correct Node.js version (v18+).
 
 ### Windows
 
@@ -155,6 +171,41 @@ For better security, you can store your API key in an environment variable:
 
 ## Troubleshooting
 
+### Server Crashes with "SyntaxError" or Node.js Version Errors
+
+**Problem:** You see errors like:
+```
+SyntaxError: The requested module 'node:fs/promises' does not provide an export named 'constants'
+```
+
+**Solution:** Claude Desktop is using an outdated Node.js version. You **must** use the full path to npx with Node.js v18 or higher:
+
+1. Find your Node.js path:
+   ```bash
+   which node
+   # Should show v18+ like: /Users/yourname/.nvm/versions/node/v22.21.0/bin/node
+   ```
+
+2. Update your Claude Desktop config to use the full path:
+   ```json
+   {
+     "mcpServers": {
+       "rtm": {
+         "command": "/Users/yourname/.nvm/versions/node/v22.21.0/bin/npx",
+         "args": [
+           "mcp-remote",
+           "http://localhost:8787/mcp",
+           "--header",
+           "x-api-key: YOUR_API_KEY_HERE"
+         ]
+       }
+     }
+   }
+   ```
+
+3. Replace the path with your actual npx path
+4. Completely quit and restart Claude Desktop
+
 ### "Unauthorized" Error
 
 - Verify your API key is correct
@@ -177,7 +228,8 @@ For better security, you can store your API key in an environment variable:
 
 - Verify the configuration file syntax is valid JSON
 - Check Claude Desktop logs for errors
-- Make sure `mcp-remote` is installed globally: `npm list -g mcp-remote`
+- Make sure `mcp-remote` is installed: `npm list -g mcp-remote`
+- Ensure you're using Node.js v18 or higher (use full path to npx)
 
 ## Security Best Practices
 

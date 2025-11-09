@@ -46,66 +46,20 @@ export function authRoutes() {
       // Generate auth URL with frob (desktop flow)
       const authUrl = rtm.authUrl("write", frob);
 
-      // Show instructions page with link to RTM and callback button
-      return c.html(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Connect to Remember The Milk</title>
-            <style>
-              body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
-                max-width: 600px; 
-                margin: 50px auto; 
-                padding: 20px;
-                line-height: 1.6;
-              }
-              .step { 
-                background: #f5f5f5; 
-                padding: 20px; 
-                border-radius: 8px; 
-                margin: 20px 0;
-              }
-              .button {
-                display: inline-block;
-                padding: 12px 24px;
-                background: #0066cc;
-                color: white;
-                text-decoration: none;
-                border-radius: 6px;
-                font-weight: 500;
-                margin: 10px 10px 10px 0;
-              }
-              .button:hover { background: #0052a3; }
-              .button-secondary {
-                background: #666;
-              }
-              .button-secondary:hover { background: #444; }
-            </style>
-          </head>
-          <body>
-            <h1>🔗 Connect to Remember The Milk</h1>
-            <div class="step">
-              <h2>Step 1: Authorize on RTM</h2>
-              <p>Click the button below to open Remember The Milk and authorize this application:</p>
-              <a href="${authUrl}" target="_blank" class="button">Open Remember The Milk</a>
-            </div>
-            <div class="step">
-              <h2>Step 2: Return Here</h2>
-              <p>After authorizing on RTM, click this button to complete the connection:</p>
-              <a href="/rtm/callback" class="button button-secondary">I've Authorized - Complete Setup</a>
-            </div>
-          </body>
-        </html>
-      `);
+      // Redirect to web app with auth URL
+      const webAppUrl = process.env.WEB_APP_URL || "http://localhost:3000";
+      const redirectUrl = `${webAppUrl}/rtm/connect?authUrl=${encodeURIComponent(
+        authUrl
+      )}`;
+      return c.redirect(redirectUrl);
     } catch (error) {
       console.error("Failed to start RTM auth:", error);
       return c.text("Failed to start authorization", 500);
     }
   });
 
-  // RTM OAuth callback (desktop flow - user returns here after approving)
-  app.get("/callback", async (c) => {
+  // Complete RTM authorization (called from web app)
+  app.get("/complete", async (c) => {
     const session = await getSession(c.req.raw);
     if (!session?.user) {
       return c.text("Unauthorized", 401);
@@ -185,22 +139,7 @@ export function authRoutes() {
         )
         .execute();
 
-      return c.html(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>RTM Connected</title>
-            <style>
-              body { font-family: sans-serif; max-width: 600px; margin: 50px auto; text-align: center; }
-              .success { color: #22c55e; font-size: 24px; margin-bottom: 20px; }
-            </style>
-          </head>
-          <body>
-            <div class="success">✅ Successfully connected to Remember The Milk!</div>
-            <p>You can now close this window and return to your application.</p>
-          </body>
-        </html>
-      `);
+      return c.json({ success: true });
     } catch (error) {
       console.error("RTM callback error:", error);
       return c.text("Failed to complete authorization", 500);

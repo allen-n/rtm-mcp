@@ -1,4 +1,4 @@
-import { pool} from "@db/kysely";
+import { pool } from "@db/kysely"; // If using better auth cli, use the absolute path import for the module
 import { betterAuth } from "better-auth";
 import type { Session, SessionUser } from "./types";
 
@@ -42,7 +42,8 @@ export const auth = betterAuth({
       providerId: "provider",
       accessToken: "access_token",
       refreshToken: "refresh_token",
-      expiresAt: "expires_at",
+      // Note: idToken, accessTokenExpiresAt, refreshTokenExpiresAt, scope, password
+      // are already camelCase in the schema, so no mapping needed
       createdAt: "created_at",
       updatedAt: "updated_at",
     },

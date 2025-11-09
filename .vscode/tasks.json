@@ -1,0 +1,97 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build MCP Server",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["--filter", "@apps/mcp-server", "build"],
+      "group": "build",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Build Web App",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["--filter", "@apps/web", "build"],
+      "group": "build",
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Run Database Migrations",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["--filter", "@packages/db", "migrate", "latest"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Start MCP Server (Dev)",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["--filter", "@apps/mcp-server", "dev"],
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": "Server listening on.*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Start Web App (Dev)",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["--filter", "@apps/web", "dev"],
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^([^\\s].*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": "(- Local:|Ready in)"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Start All Services",
+      "dependsOn": ["Start MCP Server (Dev)", "Start Web App (Dev)"],
+      "problemMatcher": []
+    }
+  ]
+}

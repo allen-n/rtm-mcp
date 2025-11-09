@@ -6,7 +6,7 @@
   "main": "src/kysely.ts",
   "scripts": {
     "migrate": "tsx src/migrator.ts",
-    "generate": "tsx src/generate-types.ts",
+    "generate-types": "tsx src/generate-types.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "typecheck": "tsc --noEmit"

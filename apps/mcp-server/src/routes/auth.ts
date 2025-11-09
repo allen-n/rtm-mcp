@@ -6,7 +6,7 @@ import { Hono } from "hono";
 export function authRoutes() {
   const app = new Hono();
 
-  // Start RTM OAuth flow
+  // Start RTM OAuth flow (desktop flow - no callback URL needed)
   app.get("/start", async (c) => {
     const session = await getSession(c.req.raw);
     if (!session?.user) {
@@ -15,16 +15,96 @@ export function authRoutes() {
 
     try {
       const rtm = getRtmClient();
-      const authUrl = rtm.authUrl("write");
 
-      return c.redirect(authUrl);
+      // Get a frob first (desktop flow)
+      const frob = await rtm.getFrob();
+
+      // Store frob in session/database temporarily
+      // For now, we'll pass it via query param when user returns
+      const now = new Date().toISOString();
+      await db
+        .insertInto("rtm_tokens")
+        .values({
+          user_id: session.user.id,
+          auth_token: frob, // Temporarily store frob here
+          perms: "pending",
+          status: "pending",
+          username: "",
+          fullname: "",
+          updated_at: now,
+        })
+        .onConflict((oc) =>
+          oc.column("user_id").doUpdateSet({
+            auth_token: frob,
+            perms: "pending",
+            status: "pending",
+            updated_at: now,
+          })
+        )
+        .execute();
+
+      // Generate auth URL with frob (desktop flow)
+      const authUrl = rtm.authUrl("write", frob);
+
+      // Show instructions page with link to RTM and callback button
+      return c.html(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Connect to Remember The Milk</title>
+            <style>
+              body { 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+                max-width: 600px; 
+                margin: 50px auto; 
+                padding: 20px;
+                line-height: 1.6;
+              }
+              .step { 
+                background: #f5f5f5; 
+                padding: 20px; 
+                border-radius: 8px; 
+                margin: 20px 0;
+              }
+              .button {
+                display: inline-block;
+                padding: 12px 24px;
+                background: #0066cc;
+                color: white;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: 500;
+                margin: 10px 10px 10px 0;
+              }
+              .button:hover { background: #0052a3; }
+              .button-secondary {
+                background: #666;
+              }
+              .button-secondary:hover { background: #444; }
+            </style>
+          </head>
+          <body>
+            <h1>🔗 Connect to Remember The Milk</h1>
+            <div class="step">
+              <h2>Step 1: Authorize on RTM</h2>
+              <p>Click the button below to open Remember The Milk and authorize this application:</p>
+              <a href="${authUrl}" target="_blank" class="button">Open Remember The Milk</a>
+            </div>
+            <div class="step">
+              <h2>Step 2: Return Here</h2>
+              <p>After authorizing on RTM, click this button to complete the connection:</p>
+              <a href="/rtm/callback" class="button button-secondary">I've Authorized - Complete Setup</a>
+            </div>
+          </body>
+        </html>
+      `);
     } catch (error) {
       console.error("Failed to start RTM auth:", error);
       return c.text("Failed to start authorization", 500);
     }
   });
 
-  // RTM OAuth callback
+  // RTM OAuth callback (desktop flow - user returns here after approving)
   app.get("/callback", async (c) => {
     const session = await getSession(c.req.raw);
     if (!session?.user) {
@@ -33,11 +113,23 @@ export function authRoutes() {
 
     try {
       const user = session.user;
-      const frob = c.req.query("frob");
-      if (!frob) {
-        return c.text("Missing frob parameter", 400);
+
+      // In desktop flow, retrieve the frob we stored earlier
+      const tokenRecord = await db
+        .selectFrom("rtm_tokens")
+        .select(["auth_token"])
+        .where("user_id", "=", user.id)
+        .where("status", "=", "pending")
+        .executeTakeFirst();
+
+      if (!tokenRecord) {
+        return c.text(
+          "No pending authorization found. Please start the auth flow again.",
+          400
+        );
       }
 
+      const frob = tokenRecord.auth_token;
       const rtm = getRtmClient();
       const { auth } = await rtm.getToken(frob);
 
@@ -50,20 +142,20 @@ export function authRoutes() {
 
       // Upsert user
       await db
-        .insertInto("users")
+        .insertInto("user")
         .values({
           id: user.id,
           email,
-          email_verified: 1,
-          name: user.name ?? null,
+          email_verified: true,
+          name: user.name || "",
           created_at: now,
           updated_at: now,
         })
         .onConflict((oc) =>
           oc.column("id").doUpdateSet({
             email,
-            email_verified: 1,
-            name: user.name ?? null,
+            email_verified: true,
+            name: user.name || "",
             updated_at: now,
           })
         )

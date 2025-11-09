@@ -88,13 +88,32 @@ export class RtmClient {
   }
 
   /**
-   * Generate authentication URL for user to authorize
+   * Get a frob for desktop-style authentication (no callback URL needed)
    */
-  authUrl(perms: "read" | "write" | "delete" = "write"): string {
-    const params = {
+  async getFrob(): Promise<string> {
+    const data = await this.call("rtm.auth.getFrob");
+    return data.rsp.frob as string;
+  }
+
+  /**
+   * Generate authentication URL for user to authorize
+   *
+   * @param perms - Permission level (read, write, or delete)
+   * @param frob - Optional frob for desktop flow. If provided, uses desktop flow (no callback).
+   *               If omitted, uses web flow (requires callback URL configured at RTM).
+   */
+  authUrl(perms: "read" | "write" | "delete" = "write", frob?: string): string {
+    const params: Record<string, string> = {
       api_key: this.apiKey,
       perms,
     };
+
+    if (frob) {
+      // Desktop flow - include frob in URL
+      params.frob = frob;
+    }
+    // Web flow - RTM will redirect to configured callback URL with frob
+
     const sig = apiSig(params, this.sharedSecret);
     const qs = new URLSearchParams({ ...params, api_sig: sig }).toString();
     return `${AUTH_BASE}?${qs}`;

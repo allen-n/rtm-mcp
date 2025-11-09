@@ -30,7 +30,11 @@ The server handles RTM authentication, timeline management, and exposes your tas
 - Node.js 20+
 - pnpm 9+
 - Remember The Milk account
-- [RTM API Key](https://www.rememberthemilk.com/services/api/) (free)
+- [RTM API Key](https://www.rememberthemilk.com/services/api/) (free) - **See RTM API Key Setup below**
+
+## RTM API Key Setup
+
+Good news! This project uses RTM's **desktop authentication flow**, which means **no callback URL configuration is required**. Just get your API key and shared secret from RTM, and you're ready to go!
 
 ## Quick Start
 
@@ -104,8 +108,10 @@ The web portal runs on `http://localhost:3000`
 ### 6. Connect Your RTM Account
 
 1. Visit `http://localhost:8787/rtm/start`
-2. Authorize the application on Remember The Milk
-3. You'll be redirected back with a success message
+2. Click the button to open Remember The Milk
+3. Authorize the application on RTM
+4. Return to the browser tab and click "I've Authorized - Complete Setup"
+5. You'll see a success message when connected!
 
 ### 7. Test with MCP Inspector
 

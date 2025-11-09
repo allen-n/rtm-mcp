@@ -1,4 +1,5 @@
 // Client-side authentication utilities for web app
+import { apiKeyClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import type { SessionUser } from "./types";
 
@@ -9,6 +10,7 @@ export const authClient = createAuthClient({
   fetchOptions: {
     credentials: "include", // Ensure cookies are sent with cross-origin requests
   },
+  plugins: [apiKeyClient()],
 });
 
 // Re-export useful types

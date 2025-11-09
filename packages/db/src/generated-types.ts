@@ -27,6 +27,30 @@ export interface Account {
   user_id: string;
 }
 
+export interface Apikey {
+  createdAt: Timestamp;
+  enabled: boolean | null;
+  expiresAt: Timestamp | null;
+  id: string;
+  key: string;
+  lastRefillAt: Timestamp | null;
+  lastRequest: Timestamp | null;
+  metadata: string | null;
+  name: string | null;
+  permissions: string | null;
+  prefix: string | null;
+  rateLimitEnabled: boolean | null;
+  rateLimitMax: number | null;
+  rateLimitTimeWindow: number | null;
+  refillAmount: number | null;
+  refillInterval: number | null;
+  remaining: number | null;
+  requestCount: number | null;
+  start: string | null;
+  updatedAt: Timestamp;
+  userId: string;
+}
+
 export interface RtmTimelines {
   created_at: Timestamp;
   expires_at: Timestamp;
@@ -91,6 +115,7 @@ export interface WebhookSubs {
 
 export interface DB {
   account: Account;
+  apikey: Apikey;
   rtm_timelines: RtmTimelines;
   rtm_tokens: RtmTokens;
   session: Session;

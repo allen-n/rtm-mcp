@@ -4,7 +4,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
   // User table (BetterAuth)
   await db.schema
     .createTable("user")
-    .addColumn("id", "text", (col) => col.primaryKey())
+    .addColumn("id", "text", (col) => col.notNull().primaryKey())
     .addColumn("name", "text", (col) => col.notNull())
     .addColumn("email", "text", (col) => col.notNull().unique())
     .addColumn("email_verified", "boolean", (col) => col.notNull())
@@ -20,7 +20,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
   // Session table (BetterAuth)
   await db.schema
     .createTable("session")
-    .addColumn("id", "text", (col) => col.primaryKey())
+    .addColumn("id", "text", (col) => col.notNull().primaryKey())
     .addColumn("expires_at", "timestamptz", (col) => col.notNull())
     .addColumn("token", "text", (col) => col.notNull().unique())
     .addColumn("created_at", "timestamptz", (col) =>

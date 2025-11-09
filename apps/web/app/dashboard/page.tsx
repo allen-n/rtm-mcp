@@ -3,6 +3,7 @@
 import { authClient } from "@packages/auth/src/client";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import { ApiKeySection } from "./api-key-section";
 
 type RtmStatus = {
   connected: boolean;
@@ -306,6 +307,9 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* API Key Management Section */}
+      <ApiKeySection />
 
       {/* Disconnect Modal */}
       {showDisconnectModal && (

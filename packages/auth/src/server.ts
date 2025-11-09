@@ -1,5 +1,6 @@
 import { pool } from "@db/kysely"; // If using better auth cli, use the absolute path import for the module
 import { betterAuth } from "better-auth";
+import { apiKey } from "better-auth/plugins";
 import type { Session, SessionUser } from "./types";
 
 // Configure authentication with OAuth and email/password support
@@ -86,6 +87,21 @@ export const auth = betterAuth({
       httpOnly: true, // Prevent XSS attacks
     },
   },
+
+  // API Key plugin for MCP server authentication
+  plugins: [
+    apiKey({
+      // Header to check for API key
+      apiKeyHeaders: ["x-api-key"],
+
+      // Rate limiting per API key
+      rateLimit: {
+        enabled: true,
+        maxRequests: 1000, // Max requests
+        timeWindow: 60 * 60, // Per hour
+      },
+    }),
+  ],
 });
 
 // Helper to extract session from request

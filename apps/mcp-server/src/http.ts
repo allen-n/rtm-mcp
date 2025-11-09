@@ -44,7 +44,7 @@ app.use(
     ),
     credentials: true,
     exposeHeaders: ["MCP-Session-Id"],
-    allowHeaders: ["Content-Type", "MCP-Session-Id"],
+    allowHeaders: ["Content-Type", "MCP-Session-Id", "x-api-key"],
   })
 );
 
@@ -74,8 +74,34 @@ app.route("/rtm", authRoutes());
 app.route("/webhook", webhookRoutes());
 
 app.post("/mcp", async (c) => {
-  const user = c.get("user");
-  if (!user?.id) {
+  let userId: string | null = null;
+
+  // Try API key authentication first
+  const apiKeyHeader = c.req.header("x-api-key");
+  if (apiKeyHeader) {
+    try {
+      const apiKeyResult = await auth.api.verifyApiKey({
+        body: { key: apiKeyHeader },
+      });
+
+      if (apiKeyResult?.valid && apiKeyResult.key) {
+        userId = apiKeyResult.key.userId;
+      }
+    } catch (error) {
+      console.error("API key verification error:", error);
+    }
+  }
+
+  // Fall back to session authentication
+  if (!userId) {
+    const user = c.get("user");
+    if (user?.id) {
+      userId = user.id;
+    }
+  }
+
+  // Require authentication via either method
+  if (!userId) {
     return c.json({ error: "Unauthorized" }, 401);
   }
 
@@ -88,7 +114,7 @@ app.post("/mcp", async (c) => {
   await transportReady;
 
   try {
-    await withUserContext(user.id, async () => {
+    await withUserContext(userId, async () => {
       await streamableTransport.handleRequest(incoming, outgoing);
     });
     return new Response(null, {

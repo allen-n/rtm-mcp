@@ -3,8 +3,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config as loadEnv } from "dotenv";
 import { Kysely, PostgresDialect } from "kysely";
-import { Pool } from "pg";
+import { Pool, types } from "pg";
 import type { DB } from "./schema";
+
+types.setTypeParser(types.builtins.TIMESTAMPTZ, (val) => new Date(val));
+types.setTypeParser(types.builtins.TIMESTAMP, (val) => new Date(val));
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

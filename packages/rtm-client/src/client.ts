@@ -155,6 +155,29 @@ export class RtmClient {
   }
 
   /**
+   * Test if user is logged in (alternative to checkToken)
+   * Returns user info if logged in, throws error if not
+   */
+  async testLogin(
+    authToken: string
+  ): Promise<{ id: string; username: string } | null> {
+    try {
+      const data = await this.call("rtm.test.login", {}, authToken);
+      const user = data.rsp.user as { id: string; username: string };
+      return user;
+    } catch (error) {
+      if (
+        error instanceof RtmApiError &&
+        (error.code === "98" || error.code === "99")
+      ) {
+        // Login failed / Invalid auth token / User not logged in
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Create a new timeline for this session
    * Timelines should be created per-session, not stored permanently
    */

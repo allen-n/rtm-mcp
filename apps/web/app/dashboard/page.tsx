@@ -9,13 +9,20 @@ type RtmStatus = {
   username?: string;
   perms?: string;
   lastUpdated?: string;
+  error?: string;
+  details?: {
+    checkToken?: { valid: boolean; error: string | null };
+    testLogin?: { valid: boolean; error: string | null };
+  };
 };
 
 export default function DashboardPage() {
   const router = useRouter();
   const [rtmStatus, setRtmStatus] = useState<RtmStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [disconnecting, setDisconnecting] = useState(false);
+  const [showDisconnectModal, setShowDisconnectModal] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
 
   // Use better-auth's reactive session hook
   const session = authClient.useSession();
@@ -59,30 +66,45 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDisconnectRtm = async () => {
-    if (!confirm("Are you sure you want to disconnect Remember The Milk?")) {
-      return;
-    }
+  const handleDisconnectRtm = () => {
+    setShowDisconnectModal(true);
+    setVerifyError(null);
+  };
 
-    setDisconnecting(true);
+  const handleVerifyDisconnect = async () => {
+    setVerifying(true);
+    setVerifyError(null);
+
     try {
       const apiBase =
         process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8787";
-      const res = await fetch(`${apiBase}/rtm/disconnect`, {
+      const res = await fetch(`${apiBase}/rtm/verify-disconnect`, {
         method: "POST",
         credentials: "include",
       });
 
       if (res.ok) {
-        setRtmStatus({ connected: false });
+        const data = await res.json();
+
+        if (data.revoked) {
+          // Successfully disconnected
+          setRtmStatus({ connected: false });
+          setShowDisconnectModal(false);
+          alert("Successfully disconnected from Remember The Milk!");
+        } else {
+          // Token still active
+          setVerifyError(
+            "Your token is still active. Please make sure you've revoked access on the RTM website."
+          );
+        }
       } else {
-        alert("Failed to disconnect. Please try again.");
+        setVerifyError("Failed to verify disconnect status. Please try again.");
       }
     } catch (error) {
-      console.error("Disconnect failed:", error);
-      alert("Failed to disconnect. Please try again.");
+      console.error("Verify disconnect failed:", error);
+      setVerifyError("Network error. Please try again.");
     } finally {
-      setDisconnecting(false);
+      setVerifying(false);
     }
   };
 
@@ -201,21 +223,63 @@ export default function DashboardPage() {
 
             <button
               onClick={handleDisconnectRtm}
-              disabled={disconnecting}
               style={{
                 padding: "0.5rem 1rem",
-                backgroundColor: disconnecting ? "#9ca3af" : "#ef4444",
+                backgroundColor: "#ef4444",
                 color: "white",
                 border: "none",
                 borderRadius: "0.375rem",
-                cursor: disconnecting ? "not-allowed" : "pointer",
+                cursor: "pointer",
               }}
             >
-              {disconnecting ? "Disconnecting..." : "Disconnect"}
+              Disconnect
             </button>
           </div>
         ) : (
           <div>
+            {rtmStatus?.error && (
+              <div
+                style={{
+                  marginBottom: "1rem",
+                  padding: "1rem",
+                  backgroundColor: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: "0.375rem",
+                }}
+              >
+                <p
+                  style={{
+                    color: "#991b1b",
+                    fontWeight: "600",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  Connection Error: {rtmStatus.error}
+                </p>
+                {rtmStatus.details && (
+                  <div style={{ fontSize: "0.875rem", color: "#7f1d1d" }}>
+                    <p style={{ marginTop: "0.5rem" }}>
+                      <strong>checkToken:</strong>{" "}
+                      {rtmStatus.details.checkToken?.valid
+                        ? "✓ Valid"
+                        : "✗ Invalid"}
+                      {rtmStatus.details.checkToken?.error && (
+                        <span> - {rtmStatus.details.checkToken.error}</span>
+                      )}
+                    </p>
+                    <p style={{ marginTop: "0.25rem" }}>
+                      <strong>testLogin:</strong>{" "}
+                      {rtmStatus.details.testLogin?.valid
+                        ? "✓ Valid"
+                        : "✗ Invalid"}
+                      {rtmStatus.details.testLogin?.error && (
+                        <span> - {rtmStatus.details.testLogin.error}</span>
+                      )}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
             <p style={{ color: "#6b7280", marginBottom: "1rem" }}>
               Connect your Remember The Milk account to use it with AI
               assistants via MCP.
@@ -236,6 +300,174 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Disconnect Modal */}
+      {showDisconnectModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => !verifying && setShowDisconnectModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "0.5rem",
+              padding: "2rem",
+              maxWidth: "32rem",
+              width: "90%",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              style={{
+                fontSize: "1.25rem",
+                fontWeight: "bold",
+                marginBottom: "1rem",
+              }}
+            >
+              Disconnect Remember The Milk
+            </h3>
+
+            <div style={{ marginBottom: "1.5rem" }}>
+              <p style={{ marginBottom: "1rem", color: "#374151" }}>
+                To disconnect safely, please follow these steps:
+              </p>
+
+              <div
+                style={{
+                  backgroundColor: "#f3f4f6",
+                  padding: "1rem",
+                  borderRadius: "0.375rem",
+                  marginBottom: "1rem",
+                }}
+              >
+                <p
+                  style={{
+                    fontWeight: "600",
+                    marginBottom: "0.5rem",
+                    color: "#1f2937",
+                  }}
+                >
+                  Step 1: Revoke Access on RTM
+                </p>
+                <p
+                  style={{
+                    fontSize: "0.875rem",
+                    color: "#4b5563",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  Visit the RTM website to revoke this app's access:
+                </p>
+                <a
+                  href="https://www.rememberthemilk.com/app/#settings/apps"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "inline-block",
+                    padding: "0.5rem 1rem",
+                    backgroundColor: "#2563eb",
+                    color: "white",
+                    borderRadius: "0.375rem",
+                    textDecoration: "none",
+                    fontSize: "0.875rem",
+                    fontWeight: "500",
+                  }}
+                >
+                  Open RTM Settings →
+                </a>
+              </div>
+
+              <div
+                style={{
+                  backgroundColor: "#f3f4f6",
+                  padding: "1rem",
+                  borderRadius: "0.375rem",
+                }}
+              >
+                <p
+                  style={{
+                    fontWeight: "600",
+                    marginBottom: "0.5rem",
+                    color: "#1f2937",
+                  }}
+                >
+                  Step 2: Complete Disconnect
+                </p>
+                <p style={{ fontSize: "0.875rem", color: "#4b5563" }}>
+                  After revoking access on RTM, click the button below to verify
+                  and complete the disconnect.
+                </p>
+              </div>
+
+              {verifyError && (
+                <div
+                  style={{
+                    marginTop: "1rem",
+                    padding: "0.75rem",
+                    backgroundColor: "#fef2f2",
+                    border: "1px solid #fecaca",
+                    borderRadius: "0.375rem",
+                    color: "#991b1b",
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  {verifyError}
+                </div>
+              )}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "0.75rem",
+                justifyContent: "flex-end",
+              }}
+            >
+              <button
+                onClick={() => setShowDisconnectModal(false)}
+                disabled={verifying}
+                style={{
+                  padding: "0.5rem 1rem",
+                  backgroundColor: "#e5e7eb",
+                  color: "#374151",
+                  border: "none",
+                  borderRadius: "0.375rem",
+                  cursor: verifying ? "not-allowed" : "pointer",
+                  opacity: verifying ? 0.5 : 1,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleVerifyDisconnect}
+                disabled={verifying}
+                style={{
+                  padding: "0.5rem 1rem",
+                  backgroundColor: verifying ? "#9ca3af" : "#ef4444",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.375rem",
+                  cursor: verifying ? "not-allowed" : "pointer",
+                }}
+              >
+                {verifying ? "Verifying..." : "Verify & Complete Disconnect"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

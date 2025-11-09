@@ -166,39 +166,94 @@ export function authRoutes() {
         return c.json({ connected: false });
       }
 
-      // Verify token is still valid
-      let isValid = false;
-      if (token.status === "active") {
-        const rtm = getRtmClient();
-        isValid = await rtm.checkToken(token.auth_token);
+      // Skip validation if token is not active
+      if (token.status !== "active") {
+        return c.json({
+          connected: false,
+          username: token.username,
+          perms: token.perms,
+          lastUpdated: token.updated_at,
+          error: "Token status is not active",
+        });
       }
 
-      if (!isValid && token.status === "active") {
-        // Mark as invalid
+      // Verify token is still valid using both methods for detailed status
+      const rtm = getRtmClient();
+      let checkTokenValid = false;
+      let testLoginValid = false;
+      let checkTokenError: string | null = null;
+      let testLoginError: string | null = null;
+
+      try {
+        checkTokenValid = await rtm.checkToken(token.auth_token);
+      } catch (error) {
+        checkTokenError =
+          error instanceof Error ? error.message : String(error);
+      }
+
+      try {
+        const userInfo = await rtm.testLogin(token.auth_token);
+        testLoginValid = userInfo !== null;
+      } catch (error) {
+        testLoginError = error instanceof Error ? error.message : String(error);
+      }
+
+      // If both methods agree the token is invalid, delete it
+      if (!checkTokenValid && !testLoginValid) {
         await db
-          .updateTable("rtm_tokens")
-          .set({
-            status: "invalid",
-            updated_at: new Date().toISOString(),
-          })
+          .deleteFrom("rtm_tokens")
           .where("user_id", "=", user.id)
           .execute();
+
+        return c.json({
+          connected: false,
+          username: token.username,
+          perms: token.perms,
+          lastUpdated: token.updated_at,
+          error: "Token has been revoked or is invalid",
+          details: {
+            checkToken: { valid: false, error: checkTokenError },
+            testLogin: { valid: false, error: testLoginError },
+          },
+        });
       }
 
+      // If results disagree, something is wrong - report detailed status
+      if (checkTokenValid !== testLoginValid) {
+        return c.json({
+          connected: false,
+          username: token.username,
+          perms: token.perms,
+          lastUpdated: token.updated_at,
+          error: "Token validation methods disagree",
+          details: {
+            checkToken: { valid: checkTokenValid, error: checkTokenError },
+            testLogin: { valid: testLoginValid, error: testLoginError },
+          },
+        });
+      }
+
+      // Both methods confirm token is valid
       return c.json({
-        connected: isValid,
+        connected: true,
         username: token.username,
         perms: token.perms,
         lastUpdated: token.updated_at,
       });
     } catch (error) {
       console.error("Status check error:", error);
-      return c.json({ error: "Failed to check status" }, 500);
+      return c.json(
+        {
+          error: "Failed to check status",
+          details: error instanceof Error ? error.message : String(error),
+        },
+        500
+      );
     }
   });
 
-  // Disconnect RTM
-  app.post("/disconnect", async (c) => {
+  // Verify RTM token is revoked (user must revoke on RTM website first)
+  app.post("/verify-disconnect", async (c) => {
     const session = await getSession(c.req.raw);
     if (!session?.user) {
       return c.json({ error: "Unauthorized" }, 401);
@@ -207,15 +262,47 @@ export function authRoutes() {
     try {
       const user = session.user;
 
-      await db
-        .deleteFrom("rtm_tokens")
+      // Get stored token
+      const tokenRecord = await db
+        .selectFrom("rtm_tokens")
+        .select(["auth_token"])
         .where("user_id", "=", user.id)
-        .execute();
+        .executeTakeFirst();
 
-      return c.json({ success: true });
+      if (!tokenRecord) {
+        return c.json({
+          revoked: true,
+          message: "No token found - already disconnected",
+        });
+      }
+
+      // Test if token is still valid
+      const rtm = getRtmClient();
+      const user_info = await rtm.testLogin(tokenRecord.auth_token);
+
+      if (user_info === null) {
+        // Token is revoked! Safe to delete from our database
+        await db
+          .deleteFrom("rtm_tokens")
+          .where("user_id", "=", user.id)
+          .execute();
+
+        return c.json({
+          revoked: true,
+          message:
+            "Token revoked successfully - disconnected from our database",
+        });
+      }
+
+      // Token is still valid - user hasn't revoked it yet
+      return c.json({
+        revoked: false,
+        message:
+          "Token is still active - please revoke access on RTM website first",
+      });
     } catch (error) {
-      console.error("Disconnect error:", error);
-      return c.json({ error: "Failed to disconnect" }, 500);
+      console.error("Verify disconnect error:", error);
+      return c.json({ error: "Failed to verify disconnect status" }, 500);
     }
   });
 

@@ -2,13 +2,14 @@ import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { auth, getSession } from "@auth/server";
 import type { Session } from "@auth/server";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { mcpServer, withUserContext } from "./mcp.js";
+import { mcpServer, withTransportUserContext } from "./mcp.js";
 import { authRoutes } from "./routes/auth.js";
 import { webhookRoutes } from "./routes/webhook.js";
+import { createTransportManager } from "./transport.js";
+import { httpLogger, authLogger, mcpLogger } from "./logger.js";
 
 type SessionResult = NonNullable<Session>;
 
@@ -26,12 +27,9 @@ const MCP_ALREADY_SENT_HEADER = "x-hono-already-sent";
 
 const app = new Hono<{ Bindings: NodeBindings; Variables: Variables }>();
 
-const streamableTransport = new StreamableHTTPServerTransport({
-  sessionIdGenerator: randomUUID,
-  enableDnsRebindingProtection: false,
-});
-
-const transportReady = mcpServer.connect(streamableTransport);
+// Initialize transport manager
+const transportManager = createTransportManager();
+const transportReady = transportManager.connect(mcpServer);
 
 // Middleware
 app.use("*", logger());
@@ -74,13 +72,21 @@ app.route("/rtm", authRoutes());
 app.route("/webhook", webhookRoutes());
 
 app.post("/mcp", async (c) => {
-  console.log("🔍 MCP request received");
+  const requestId = randomUUID();
+  httpLogger.info("MCP request received", { requestId });
+  
+  // Only handle HTTP transport requests
+  if (!transportManager.isHttpTransport()) {
+    httpLogger.error("MCP endpoint called but server is configured for STDIO transport", { requestId });
+    return c.json({ error: "MCP HTTP transport not available" }, 503);
+  }
+
   let userId: string | null = null;
 
   // Try API key authentication first
   const apiKeyHeader = c.req.header("x-api-key");
   if (apiKeyHeader) {
-    console.log("🔑 API key found in header");
+    authLogger.info("API key found in header", { requestId });
     try {
       const apiKeyResult = await auth.api.verifyApiKey({
         body: { key: apiKeyHeader },
@@ -88,15 +94,15 @@ app.post("/mcp", async (c) => {
 
       if (apiKeyResult?.valid && apiKeyResult.key) {
         userId = apiKeyResult.key.userId;
-        console.log("✅ API key valid, userId:", userId);
+        authLogger.info("API key authentication successful", { userId, requestId });
       } else {
-        console.log("❌ API key invalid");
+        authLogger.warn("API key invalid", { requestId });
       }
     } catch (error) {
-      console.error("API key verification error:", error);
+      authLogger.error("API key verification error", error, undefined, requestId);
     }
   } else {
-    console.log("ℹ️ No API key in header, trying session auth");
+    authLogger.info("No API key in header, trying session auth", { requestId });
   }
 
   // Fall back to session authentication
@@ -104,42 +110,42 @@ app.post("/mcp", async (c) => {
     const user = c.get("user");
     if (user?.id) {
       userId = user.id;
-      console.log("✅ Session auth successful, userId:", userId);
+      authLogger.info("Session authentication successful", { userId, requestId });
     } else {
-      console.log("❌ No session user found");
+      authLogger.warn("No session user found", { requestId });
     }
   }
 
   // Require authentication via either method
   if (!userId) {
-    console.log("🚫 Unauthorized - no valid authentication");
+    authLogger.error("Unauthorized - no valid authentication", undefined, undefined, requestId);
     return c.json({ error: "Unauthorized" }, 401);
   }
 
   const { incoming, outgoing } = c.env;
   if (!incoming || !outgoing) {
-    console.error("Streamable transport requires Node bindings");
+    httpLogger.error("Streamable transport requires Node bindings", { requestId });
     return c.json({ error: "MCP transport unavailable" }, 500);
   }
 
-  console.log("⏳ Waiting for transport ready...");
+  httpLogger.debug("Waiting for transport ready", { requestId });
   await transportReady;
-  console.log("✅ Transport ready");
+  httpLogger.debug("Transport ready", { requestId });
 
-  console.log("🚀 Starting MCP transport handler");
+  mcpLogger.info("Starting MCP transport handler", { userId, requestId });
   try {
-    await withUserContext(userId, async () => {
-      console.log("📡 Handling MCP request in user context");
-      await streamableTransport.handleRequest(incoming, outgoing);
-      console.log("✅ MCP handleRequest completed");
+    await withTransportUserContext(userId, true, async () => {
+      mcpLogger.debug("Handling MCP request in user context", { userId, requestId });
+      await transportManager.handleHttpRequest(incoming, outgoing);
+      mcpLogger.debug("MCP handleRequest completed", { userId, requestId });
     });
-    console.log("✅ MCP request completed successfully");
+    mcpLogger.info("MCP request completed successfully", { userId, requestId });
     return new Response(null, {
       status: 200,
       headers: { [MCP_ALREADY_SENT_HEADER]: "true" },
     });
   } catch (error) {
-    console.error("❌ MCP endpoint error:", error);
+    mcpLogger.error("MCP endpoint error", error, userId, requestId);
 
     if (!outgoing.writableEnded) {
       outwardErrorResponse(outgoing);
@@ -157,7 +163,19 @@ app.post("/mcp", async (c) => {
 
 // Health check
 app.get("/health", (c) => {
-  return c.json({ status: "ok", timestamp: new Date().toISOString() });
+  const transportStats = transportManager.getStats();
+  return c.json({ 
+    status: "ok", 
+    timestamp: new Date().toISOString(),
+    transport: {
+      type: transportStats.transportType,
+      status: transportStats.health.status,
+      uptime: transportStats.uptime,
+      requestCount: transportStats.health.requestCount,
+      errorCount: transportStats.health.errorCount,
+      lastError: transportStats.health.lastError,
+    }
+  });
 });
 
 // Error handler

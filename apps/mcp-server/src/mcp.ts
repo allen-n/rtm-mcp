@@ -4,11 +4,24 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getRtmClient, RtmApiError } from "@rtm-client/client";
 import { getOrCreateTimeline } from "@rtm-client/timeline";
 import { z } from "zod";
+import { withHttpUserContext } from "./context.js";
 
 // Use Zod schemas for MCP tool definitions
 export const mcpServer = new McpServer({
   name: process.env.MCP_SERVER_NAME || "rtm-mcp-server",
   version: process.env.MCP_SERVER_VERSION || "1.0.0",
+  capabilities: {
+    resources: {
+      subscribe: false,
+      listChanged: true,
+    },
+    tools: {
+      listChanged: true,
+    },
+    prompts: {
+      listChanged: true,
+    },
+  },
 });
 
 const requestContext = new AsyncLocalStorage<{ userId: string }>();
@@ -23,6 +36,22 @@ function requireUserId(): string {
 
 export function withUserContext<T>(userId: string, callback: () => Promise<T>) {
   return requestContext.run({ userId }, callback);
+}
+
+/**
+ * Transport-aware user context wrapper
+ * Uses HTTP context for HTTP transport, AsyncLocalStorage for STDIO
+ */
+export async function withTransportUserContext<T>(
+  userId: string,
+  isHttpTransport: boolean,
+  callback: () => Promise<T>
+): Promise<T> {
+  if (isHttpTransport) {
+    return withHttpUserContext(userId, callback);
+  } else {
+    return withUserContext(userId, callback);
+  }
 }
 
 // Helper to get user's RTM token

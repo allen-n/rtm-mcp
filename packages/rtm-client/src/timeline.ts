@@ -17,7 +17,7 @@ export async function getOrCreateTimeline(
     .selectFrom("rtm_timelines")
     .select(["timeline", "expires_at"])
     .where("user_id", "=", userId)
-    .where("expires_at", ">", new Date().toISOString())
+    .where("expires_at", ">", new Date())
     .orderBy("created_at", "desc")
     .executeTakeFirst();
 
@@ -47,7 +47,7 @@ export async function getOrCreateTimeline(
     await db
       .deleteFrom("rtm_timelines")
       .where("user_id", "=", userId)
-      .where("expires_at", "<", now.toISOString())
+       .where("expires_at", "<", now)
       .execute();
 
     return timeline;

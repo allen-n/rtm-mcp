@@ -1,10 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { IncomingMessage, ServerResponse } from "node:http";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { StreamableHTTPTransport } from "@hono/mcp";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
+import { Context } from "hono";
 import { transportLogger } from "./logger.js";
-
 export type TransportType = "http" | "stdio";
 
 export interface TransportConfig {
@@ -49,12 +48,15 @@ export class McpTransportManager {
     try {
       switch (config.type) {
         case "http":
-          this.transport = new StreamableHTTPServerTransport({
-            sessionIdGenerator: config.httpOptions?.sessionIdGenerator || randomUUID,
-            enableDnsRebindingProtection: config.httpOptions?.enableDnsRebindingProtection ?? true,
+          this.transport = new StreamableHTTPTransport({
+            sessionIdGenerator:
+              config.httpOptions?.sessionIdGenerator || randomUUID,
+            enableDnsRebindingProtection:
+              config.httpOptions?.enableDnsRebindingProtection ?? true,
           });
           transportLogger.debug("HTTP transport initialized", {
-            enableDnsRebindingProtection: config.httpOptions?.enableDnsRebindingProtection ?? true,
+            enableDnsRebindingProtection:
+              config.httpOptions?.enableDnsRebindingProtection ?? true,
           });
           break;
 
@@ -66,12 +68,16 @@ export class McpTransportManager {
         default:
           throw new Error(`Unsupported transport type: ${config.type}`);
       }
-      
+
       this.health.status = "disconnected";
     } catch (error) {
       this.health.status = "unhealthy";
-      this.health.lastError = error instanceof Error ? error.message : String(error);
-      transportLogger.error(`Failed to initialize ${config.type} transport`, error);
+      this.health.lastError =
+        error instanceof Error ? error.message : String(error);
+      transportLogger.error(
+        `Failed to initialize ${config.type} transport`,
+        error
+      );
       throw error;
     }
   }
@@ -93,35 +99,42 @@ export class McpTransportManager {
 
   async connect(server: any): Promise<void> {
     if (this.connectionPromise) {
-      transportLogger.debug("Connection already in progress, returning existing promise");
+      transportLogger.debug(
+        "Connection already in progress, returning existing promise"
+      );
       return this.connectionPromise;
     }
 
     this.health.status = "connecting";
     transportLogger.info(`Connecting MCP ${this.transportType} transport`);
-    
+
     this.connectionPromise = server.connect(this.getTransport());
-    
+
     try {
       await this.connectionPromise;
       this.health.status = "healthy";
       this.health.connectionTime = new Date();
-      transportLogger.info(`${this.transportType} transport connected successfully`);
+      transportLogger.info(
+        `${this.transportType} transport connected successfully`
+      );
     } catch (error) {
       this.health.status = "unhealthy";
-      this.health.lastError = error instanceof Error ? error.message : String(error);
+      this.health.lastError =
+        error instanceof Error ? error.message : String(error);
       this.health.errorCount++;
-      transportLogger.error(`Failed to connect ${this.transportType} transport`, error);
+      transportLogger.error(
+        `Failed to connect ${this.transportType} transport`,
+        error
+      );
       throw error;
     }
   }
 
-  async handleHttpRequest(
-    incoming: IncomingMessage,
-    outgoing: ServerResponse
-  ): Promise<void> {
+  async handleHttpRequest(context: Context): Promise<Response | undefined> {
     if (this.transportType !== "http") {
-      throw new Error("HTTP request handling is only available for HTTP transport");
+      throw new Error(
+        "HTTP request handling is only available for HTTP transport"
+      );
     }
 
     if (this.health.status !== "healthy") {
@@ -130,22 +143,58 @@ export class McpTransportManager {
       throw new Error(error);
     }
 
-    const httpTransport = this.transport as StreamableHTTPServerTransport;
-    
+    const httpTransport = this.transport as StreamableHTTPTransport;
+
+    // Capture headers for logging
+    const headers = {
+      accept: context.req.header("Accept"),
+      contentType: context.req.header("Content-Type"),
+      mcpSessionId: context.req.header("MCP-Session-Id"),
+    };
+
     try {
       await this.connectionPromise;
       this.health.requestCount++;
+
       transportLogger.debug("Handling HTTP request", {
         requestNumber: this.health.requestCount,
-        method: incoming.method,
-        url: incoming.url,
+        method: context.req.method,
+        url: context.req.url,
+        headers,
       });
-      await httpTransport.handleRequest(incoming, outgoing);
+
+      const response = await httpTransport.handleRequest(context);
       transportLogger.debug("HTTP request handled successfully");
+      return response;
     } catch (error) {
       this.health.errorCount++;
-      this.health.lastError = error instanceof Error ? error.message : String(error);
-      transportLogger.error("HTTP transport request handling failed", error);
+      this.health.lastError =
+        error instanceof Error ? error.message : String(error);
+
+      // Log detailed error info
+      const errorDetails = {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        status: (error as any)?.status,
+        headers,
+      };
+
+      // Try to extract response body from HTTPException
+      if ((error as any)?.res) {
+        try {
+          const errorResponse = (error as any).res.clone();
+          errorResponse.json().then((body: unknown) => {
+            transportLogger.error("HTTP transport error response body", body);
+          }).catch(() => {
+            transportLogger.error("Could not parse error response body");
+          });
+        } catch (_) {
+          // Ignore
+        }
+      }
+
+      transportLogger.error("HTTP transport request handling failed", errorDetails);
+
       throw error;
     }
   }
@@ -165,13 +214,18 @@ export class McpTransportManager {
   async close(): Promise<void> {
     transportLogger.info(`Closing ${this.transportType} transport`);
     this.health.status = "disconnected";
-    
+
     if (this.transport) {
       try {
         await this.transport.close();
-        transportLogger.info(`${this.transportType} transport closed successfully`);
+        transportLogger.info(
+          `${this.transportType} transport closed successfully`
+        );
       } catch (error) {
-        transportLogger.error(`Error closing ${this.transportType} transport`, error);
+        transportLogger.error(
+          `Error closing ${this.transportType} transport`,
+          error
+        );
       }
     }
   }
@@ -194,7 +248,7 @@ export class McpTransportManager {
 
 export function createTransportManager(): McpTransportManager {
   const transportType = (process.env.MCP_TRANSPORT as TransportType) || "http";
-  
+
   const config: TransportConfig = {
     type: transportType,
     httpOptions: {

@@ -10,15 +10,6 @@
       "skipFiles": ["<node_internals>/**"],
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}"
-      //   "envFile": "${workspaceFolder}/.env",
-      //   "env": {
-      //     "NODE_ENV": "development"
-      //   }
-      //   "serverReadyAction": {
-      //     "pattern": "Server listening on (https?://[^\\s]+)",
-      //     "uriFormat": "%s",
-      //     "action": "debugWithChrome"
-      //   }
     },
     {
       "name": "Debug MCP Server",
@@ -28,16 +19,7 @@
       "runtimeArgs": ["--filter", "@apps/mcp-server", "dev"],
       "skipFiles": ["<node_internals>/**"],
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}",
-      "envFile": "${workspaceFolder}/.env",
-      "env": {
-        "NODE_ENV": "development"
-      },
-      "serverReadyAction": {
-        "pattern": "Server listening on (https?://[^\\s]+)",
-        "uriFormat": "%s",
-        "action": "debugWithChrome"
-      }
+      "cwd": "${workspaceFolder}"
     },
     {
       "name": "Debug Next.js Web App",

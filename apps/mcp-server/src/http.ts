@@ -1,15 +1,14 @@
 import { randomUUID } from "node:crypto";
-import type { IncomingMessage, ServerResponse } from "node:http";
-import { auth, getSession } from "@auth/server";
 import type { Session } from "@auth/server";
+import { auth, getSession } from "@auth/server";
+import { StreamableHTTPTransport } from "@hono/mcp";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { authLogger, httpLogger, mcpLogger } from "./logger.js";
 import { mcpServer, withTransportUserContext } from "./mcp.js";
 import { authRoutes } from "./routes/auth.js";
 import { webhookRoutes } from "./routes/webhook.js";
-import { createTransportManager } from "./transport.js";
-import { httpLogger, authLogger, mcpLogger } from "./logger.js";
 
 type SessionResult = NonNullable<Session>;
 
@@ -18,18 +17,7 @@ type Variables = {
   session: SessionResult["session"] | null;
 };
 
-type NodeBindings = {
-  incoming: IncomingMessage;
-  outgoing: ServerResponse;
-};
-
-const MCP_ALREADY_SENT_HEADER = "x-hono-already-sent";
-
-const app = new Hono<{ Bindings: NodeBindings; Variables: Variables }>();
-
-// Initialize transport manager
-const transportManager = createTransportManager();
-const transportReady = transportManager.connect(mcpServer);
+const app = new Hono<{ Variables: Variables }>();
 
 // Middleware
 app.use("*", logger());
@@ -37,12 +25,30 @@ app.use("*", logger());
 app.use(
   "*",
   cors({
-    origin: ["http://localhost:3000", process.env.WEB_APP_URL || ""].filter(
-      Boolean
-    ),
+    origin: (origin) => {
+      // Allow any localhost origin
+      if (
+        origin.startsWith("http://localhost:") ||
+        origin.startsWith("http://127.0.0.1:")
+      ) {
+        return origin;
+      }
+      // Allow configured web app URL
+      if (process.env.WEB_APP_URL && origin === process.env.WEB_APP_URL) {
+        return origin;
+      }
+      // Reject other origins
+      return "";
+    },
     credentials: true,
     exposeHeaders: ["MCP-Session-Id"],
-    allowHeaders: ["Content-Type", "MCP-Session-Id", "x-api-key", "Accept"],
+    allowHeaders: [
+      "Content-Type",
+      "MCP-Session-Id",
+      "x-api-key",
+      "Accept",
+      "x-custom-auth-headers",
+    ],
   })
 );
 
@@ -71,15 +77,9 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 app.route("/rtm", authRoutes());
 app.route("/webhook", webhookRoutes());
 
-app.post("/mcp", async (c) => {
+app.all("/mcp", async (c) => {
   const requestId = randomUUID();
   httpLogger.info("MCP request received", { requestId });
-  
-  // Only handle HTTP transport requests
-  if (!transportManager.isHttpTransport()) {
-    httpLogger.error("MCP endpoint called but server is configured for STDIO transport", { requestId });
-    return c.json({ error: "MCP HTTP transport not available" }, 503);
-  }
 
   let userId: string | null = null;
 
@@ -94,12 +94,20 @@ app.post("/mcp", async (c) => {
 
       if (apiKeyResult?.valid && apiKeyResult.key) {
         userId = apiKeyResult.key.userId;
-        authLogger.info("API key authentication successful", { userId, requestId });
+        authLogger.info("API key authentication successful", {
+          userId,
+          requestId,
+        });
       } else {
         authLogger.warn("API key invalid", { requestId });
       }
     } catch (error) {
-      authLogger.error("API key verification error", error, undefined, requestId);
+      authLogger.error(
+        "API key verification error",
+        error,
+        undefined,
+        requestId
+      );
     }
   } else {
     authLogger.info("No API key in header, trying session auth", { requestId });
@@ -110,7 +118,10 @@ app.post("/mcp", async (c) => {
     const user = c.get("user");
     if (user?.id) {
       userId = user.id;
-      authLogger.info("Session authentication successful", { userId, requestId });
+      authLogger.info("Session authentication successful", {
+        userId,
+        requestId,
+      });
     } else {
       authLogger.warn("No session user found", { requestId });
     }
@@ -118,63 +129,55 @@ app.post("/mcp", async (c) => {
 
   // Require authentication via either method
   if (!userId) {
-    authLogger.error("Unauthorized - no valid authentication", undefined, undefined, requestId);
+    authLogger.error(
+      "Unauthorized - no valid authentication",
+      undefined,
+      undefined,
+      requestId
+    );
     return c.json({ error: "Unauthorized" }, 401);
   }
 
-  const { incoming, outgoing } = c.env;
-  if (!incoming || !outgoing) {
-    httpLogger.error("Streamable transport requires Node bindings", { requestId });
-    return c.json({ error: "MCP transport unavailable" }, 500);
-  }
-
-  httpLogger.debug("Waiting for transport ready", { requestId });
-  await transportReady;
-  httpLogger.debug("Transport ready", { requestId });
-
   mcpLogger.info("Starting MCP transport handler", { userId, requestId });
   try {
+    // Create a new transport for each request (per @hono/mcp pattern)
+    const transport = new StreamableHTTPTransport({
+      sessionIdGenerator: randomUUID,
+      enableDnsRebindingProtection: process.env.NODE_ENV === "production",
+    });
+
+    httpLogger.debug("Connecting transport to MCP server", { requestId });
+    await mcpServer.connect(transport);
+    httpLogger.debug("Transport connected", { requestId });
+
+    let response: Response | undefined;
     await withTransportUserContext(userId, true, async () => {
-      mcpLogger.debug("Handling MCP request in user context", { userId, requestId });
-      await transportManager.handleHttpRequest(incoming, outgoing);
+      mcpLogger.debug("Handling MCP request in user context", {
+        userId,
+        requestId,
+      });
+      response = await transport.handleRequest(c);
       mcpLogger.debug("MCP handleRequest completed", { userId, requestId });
     });
     mcpLogger.info("MCP request completed successfully", { userId, requestId });
-    return new Response(null, {
-      status: 200,
-      headers: { [MCP_ALREADY_SENT_HEADER]: "true" },
-    });
+
+    // Return the response from the transport - CORS middleware will add headers
+    return response;
   } catch (error) {
     mcpLogger.error("MCP endpoint error", error, userId, requestId);
-
-    if (!outgoing.writableEnded) {
-      outwardErrorResponse(outgoing);
-    }
-
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: {
-        "content-type": "application/json",
-        [MCP_ALREADY_SENT_HEADER]: "true",
-      },
-    });
+    return c.json({ error: "Internal server error" }, 500);
   }
 });
 
 // Health check
 app.get("/health", (c) => {
-  const transportStats = transportManager.getStats();
-  return c.json({ 
-    status: "ok", 
+  return c.json({
+    status: "ok",
     timestamp: new Date().toISOString(),
-    transport: {
-      type: transportStats.transportType,
-      status: transportStats.health.status,
-      uptime: transportStats.uptime,
-      requestCount: transportStats.health.requestCount,
-      errorCount: transportStats.health.errorCount,
-      lastError: transportStats.health.lastError,
-    }
+    mcp: {
+      transport: "http",
+      method: "per-request",
+    },
   });
 });
 
@@ -191,19 +194,3 @@ app.onError((err, c) => {
 });
 
 export { app };
-
-function outwardErrorResponse(res: ServerResponse) {
-  try {
-    if (!res.headersSent) {
-      res.writeHead(500, { "Content-Type": "application/json" });
-    }
-    res.end(JSON.stringify({ error: "Internal server error" }));
-  } catch (err) {
-    console.error("Failed to finalize MCP error response:", err);
-    try {
-      res.end();
-    } catch {
-      // ignore
-    }
-  }
-}

@@ -3,14 +3,18 @@ import { betterAuth } from "better-auth";
 import { apiKey } from "better-auth/plugins";
 import type { Session, SessionUser } from "./types";
 
+const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
+if (!betterAuthSecret) {
+  throw new Error("BETTER_AUTH_SECRET environment variable is required");
+}
+
 // Configure authentication with OAuth and email/password support
 export const auth = betterAuth({
   database: pool, // postgres pool directly (BetterAuth auto-detects)
 
   appName: process.env.APP_NAME || "MCP-RTM",
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  secret: process.env.BETTER_AUTH_SECRET!,
+  secret: betterAuthSecret,
 
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:8787",
 

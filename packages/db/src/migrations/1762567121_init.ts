@@ -26,7 +26,9 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn("created_at", "timestamptz", (col) =>
       col.defaultTo(sql`CURRENT_TIMESTAMP`).notNull()
     )
-    .addColumn("updated_at", "timestamptz", (col) => col.notNull())
+    .addColumn("updated_at", "timestamptz", (col) =>
+      col.defaultTo(sql`CURRENT_TIMESTAMP`).notNull()
+    )
     .addColumn("ip_address", "text")
     .addColumn("user_agent", "text")
     .addColumn("user_id", "text", (col) =>
@@ -53,10 +55,13 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn("created_at", "timestamptz", (col) =>
       col.defaultTo(sql`CURRENT_TIMESTAMP`).notNull()
     )
-    .addColumn("updated_at", "timestamptz", (col) => col.notNull())
+    .addColumn("updated_at", "timestamptz", (col) =>
+      col.defaultTo(sql`CURRENT_TIMESTAMP`).notNull()
+    )
     .execute();
 
   // Verification table (BetterAuth)
+  // TODO: Consider migrating these columns to snake_case and updating auth mappings.
   await db.schema
     .createTable("verification")
     .addColumn("id", "text", (col) => col.primaryKey())
@@ -82,7 +87,9 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn("status", "text", (col) => col.notNull())
     .addColumn("username", "text")
     .addColumn("fullname", "text")
-    .addColumn("updated_at", "timestamptz", (col) => col.notNull())
+    .addColumn("updated_at", "timestamptz", (col) =>
+      col.defaultTo(sql`CURRENT_TIMESTAMP`).notNull()
+    )
     .execute();
 
   // Timeline management - session-based with expiry
@@ -118,7 +125,9 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn("expires_at", "timestamptz")
     .addColumn("status", "text", (col) => col.notNull())
     .addColumn("created_at", "timestamptz", (col) => col.notNull())
-    .addColumn("updated_at", "timestamptz", (col) => col.notNull())
+    .addColumn("updated_at", "timestamptz", (col) =>
+      col.defaultTo(sql`CURRENT_TIMESTAMP`).notNull()
+    )
     .execute();
 
   await db.schema

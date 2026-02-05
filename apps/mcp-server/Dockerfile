@@ -23,6 +23,7 @@ FROM node:22-slim
 WORKDIR /app
 ENV NODE_ENV=production
 
+# TODO: Consider pnpm deploy (or similar) to further prune runtime artifacts.
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/apps/mcp-server/dist ./apps/mcp-server/dist
 COPY --from=base /app/apps/mcp-server/package.json ./apps/mcp-server/package.json

@@ -126,6 +126,7 @@ export class McpTransportManager {
         `Failed to connect ${this.transportType} transport`,
         error
       );
+      this.connectionPromise = null;
       throw error;
     }
   }

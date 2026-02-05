@@ -40,7 +40,9 @@ export class McpLogger {
 
     // Otherwise, check log level
     const levels = { debug: 0, info: 1, warn: 2, error: 3 };
-    return levels[level] >= levels[logLevel as LogLevel];
+    const configuredLevel =
+      logLevel in levels ? (logLevel as LogLevel) : "info";
+    return levels[level] >= levels[configuredLevel];
   }
 
   private log(

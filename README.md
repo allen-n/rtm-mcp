@@ -119,6 +119,18 @@ The web portal runs on `http://localhost:3000`
 npx @modelcontextprotocol/inspector node apps/mcp-server/dist/index.js
 ```
 
+### HTTP Clients (SSE vs JSON)
+
+The default MCP HTTP endpoint is `/mcp` and follows the Streamable HTTP spec (requires `Accept: application/json, text/event-stream` and an `initialize` request + `Mcp-Session-Id` for follow-up calls).
+
+For JSON-only clients that don't support SSE, use the compatibility endpoint:
+
+```
+POST /mcp/json
+```
+
+This endpoint accepts plain JSON requests and returns plain JSON responses.
+
 ## Project Structure
 
 ```
@@ -242,7 +254,7 @@ docker compose up
    railway up
    ```
 
-**Important:** Set the correct `RTM_CALLBACK_URL` to your Railway domain.
+**Important:** The desktop flow does **not** require `RTM_CALLBACK_URL`. It can be left unset in production unless you switch to the web-based auth flow.
 
 ## Known Issues & TODOs
 

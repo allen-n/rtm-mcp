@@ -79,6 +79,14 @@ npm install -g mcp-remote
 
 **Why use the full path?** Claude Desktop doesn't inherit your shell's PATH or nvm configuration, so it may find an older Node.js version. Using the full path ensures it uses the correct Node.js version (v18+).
 
+### JSON-only Clients
+
+If your MCP client does not support Streamable HTTP (SSE), use the compatibility endpoint:
+
+```
+http://localhost:8787/mcp/json
+```
+
 ### Windows
 
 1. Open the Claude Desktop configuration file:

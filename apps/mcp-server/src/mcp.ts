@@ -6,24 +6,6 @@ import { getOrCreateTimeline } from "@rtm-client/timeline";
 import { z } from "zod";
 import { withHttpUserContext } from "./context.js";
 
-// Use Zod schemas for MCP tool definitions
-export const mcpServer = new McpServer({
-  name: process.env.MCP_SERVER_NAME || "rtm-mcp-server",
-  version: process.env.MCP_SERVER_VERSION || "1.0.0",
-  capabilities: {
-    resources: {
-      subscribe: false,
-      listChanged: true,
-    },
-    tools: {
-      listChanged: true,
-    },
-    prompts: {
-      listChanged: true,
-    },
-  },
-});
-
 const requestContext = new AsyncLocalStorage<{ userId: string }>();
 
 function requireUserId(): string {
@@ -48,10 +30,12 @@ export async function withTransportUserContext<T>(
   callback: () => Promise<T>
 ): Promise<T> {
   if (isHttpTransport) {
-    return withHttpUserContext(userId, callback);
-  } else {
-    return withUserContext(userId, callback);
+    // Ensure AsyncLocalStorage is populated for HTTP requests too.
+    return withUserContext(userId, () =>
+      withHttpUserContext(userId, callback)
+    );
   }
+  return withUserContext(userId, callback);
 }
 
 // Helper to get user's RTM token
@@ -94,12 +78,30 @@ function handleTimelineError(error: unknown) {
   return null;
 }
 
-// Resources - provide read-only data access
-mcpServer.registerResource(
-  "rtm_lists",
-  "rtm://lists",
-  {
-    title: "RTM Lists",
+export function createMcpServer() {
+  const mcpServer = new McpServer({
+    name: process.env.MCP_SERVER_NAME || "rtm-mcp-server",
+    version: process.env.MCP_SERVER_VERSION || "1.0.0",
+    capabilities: {
+      resources: {
+        subscribe: false,
+        listChanged: true,
+      },
+      tools: {
+        listChanged: true,
+      },
+      prompts: {
+        listChanged: true,
+      },
+    },
+  });
+
+  // Resources - provide read-only data access
+  mcpServer.registerResource(
+    "rtm_lists",
+    "rtm://lists",
+    {
+      title: "RTM Lists",
     description: "User's Remember The Milk lists",
     mimeType: "application/json",
   },
@@ -118,12 +120,12 @@ mcpServer.registerResource(
         },
       ],
     };
-  }
-);
+    }
+  );
 
 // Tools - MCP SDK uses Zod for schemas
-mcpServer.registerTool(
-  "get_tasks",
+  mcpServer.registerTool(
+    "get_tasks",
   {
     title: "Get Tasks",
     description: "Retrieve tasks from Remember The Milk",
@@ -166,11 +168,11 @@ mcpServer.registerTool(
       }
       throw error;
     }
-  }
-);
+    }
+  );
 
-mcpServer.registerTool(
-  "add_task",
+  mcpServer.registerTool(
+    "add_task",
   {
     title: "Add Task",
     description: "Create a new task in Remember The Milk",
@@ -236,11 +238,11 @@ mcpServer.registerTool(
       }
       throw error;
     }
-  }
-);
+    }
+  );
 
-mcpServer.registerTool(
-  "complete_task",
+  mcpServer.registerTool(
+    "complete_task",
   {
     title: "Complete Task",
     description: "Mark a task as complete in Remember The Milk",
@@ -298,11 +300,11 @@ mcpServer.registerTool(
       }
       throw error;
     }
-  }
-);
+    }
+  );
 
-mcpServer.registerTool(
-  "set_priority",
+  mcpServer.registerTool(
+    "set_priority",
   {
     title: "Set Task Priority",
     description:
@@ -363,12 +365,12 @@ mcpServer.registerTool(
       }
       throw error;
     }
-  }
-);
+    }
+  );
 
 // Prompts - templated interactions
-mcpServer.registerPrompt(
-  "create_daily_task",
+  mcpServer.registerPrompt(
+    "create_daily_task",
   {
     title: "Create Daily Task",
     description: "Template for creating a task with Smart Add syntax",
@@ -398,5 +400,11 @@ mcpServer.registerPrompt(
         },
       ],
     };
-  }
-);
+    }
+  );
+
+  return mcpServer;
+}
+
+// Default server instance for stdio and strict HTTP transport.
+export const mcpServer = createMcpServer();

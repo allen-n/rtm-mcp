@@ -1,11 +1,9 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { connection } from "next/server";
 import { useEffect, useState } from "react";
 
-export default async function RtmConnectPage() {
-  await connection(); // Ensure the connection is ready (Next.js 14 feature)
+export default function RtmConnectPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [authUrl, setAuthUrl] = useState<string | null>(null);

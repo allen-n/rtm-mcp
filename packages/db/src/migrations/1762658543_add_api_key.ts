@@ -2,7 +2,7 @@ import { type Kysely } from "kysely";
 
 export async function up(db: Kysely<unknown>): Promise<void> {
   // API Key table (BetterAuth API Key plugin)
-  db.schema
+  await db.schema
     .createTable("apikey")
     .addColumn("id", "text", (col) => col.notNull().primaryKey())
     .addColumn("name", "text")

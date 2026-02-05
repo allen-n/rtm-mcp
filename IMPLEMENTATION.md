@@ -13,7 +13,7 @@ This is the initial implementation of the MCP-RTM server based on the specificat
 ### Packages
 
 #### `packages/db` - Database Layer
-- ✅ Kysely ORM with SQLite
+- ✅ Kysely ORM with Postgres
 - ✅ Database schema for users, sessions, accounts, RTM tokens, timelines, webhooks
 - ✅ Migration system with initial migration
 - ✅ Successfully ran migrations and created database
@@ -57,7 +57,7 @@ This is the initial implementation of the MCP-RTM server based on the specificat
 ### Infrastructure
 - ✅ Docker Compose configuration
 - ✅ Dockerfiles for all services
-- ✅ Volume management for SQLite database
+- ✅ Postgres container + volume management
 
 ## Current Status
 
@@ -158,7 +158,7 @@ mcp-rtm/
 - `POST /mcp` - MCP protocol endpoint
 - `GET /health` - Health check
 - `GET /rtm/start` - Start RTM OAuth flow
-- `GET /rtm/callback` - RTM OAuth callback
+- `GET /rtm/complete` - RTM OAuth completion (desktop flow)
 - `GET /rtm/status` - Check RTM connection status
 - `POST /rtm/disconnect` - Disconnect RTM
 - `POST /webhook/rtm` - RTM webhook receiver

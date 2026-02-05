@@ -2,13 +2,15 @@ import { randomUUID } from "node:crypto";
 import type { Session } from "@auth/server";
 import { auth, getSession } from "@auth/server";
 import { StreamableHTTPTransport } from "@hono/mcp";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception";
 import { logger } from "hono/logger";
 import { authLogger, httpLogger, mcpLogger } from "./logger.js";
-import { mcpServer, withTransportUserContext } from "./mcp.js";
+import { createMcpServer, mcpServer, withTransportUserContext } from "./mcp.js";
 import { authRoutes } from "./routes/auth.js";
 import { webhookRoutes } from "./routes/webhook.js";
+import { RelaxedStreamableHTTPTransport } from "./relaxed-http.js";
 
 type SessionResult = NonNullable<Session>;
 
@@ -19,6 +21,19 @@ type Variables = {
 
 const app = new Hono<{ Variables: Variables }>();
 
+const transport = new StreamableHTTPTransport({
+  sessionIdGenerator: randomUUID,
+  enableDnsRebindingProtection: process.env.NODE_ENV === "production",
+});
+let transportReady: Promise<void> | null = null;
+
+const relaxedTransport = new RelaxedStreamableHTTPTransport({
+  enableJsonResponse: true,
+  // No session id generator to allow stateless JSON-only clients.
+});
+let relaxedTransportReady: Promise<void> | null = null;
+const mcpServerJson = createMcpServer();
+
 // Middleware
 app.use("*", logger());
 
@@ -26,6 +41,7 @@ app.use(
   "*",
   cors({
     origin: (origin) => {
+      if (!origin) return "";
       // Allow any localhost origin
       if (
         origin.startsWith("http://localhost:") ||
@@ -77,9 +93,15 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 app.route("/rtm", authRoutes());
 app.route("/webhook", webhookRoutes());
 
-app.all("/mcp", async (c) => {
+async function handleMcpRequest(
+  c: Context,
+  options: { relaxed: boolean }
+) {
   const requestId = randomUUID();
-  httpLogger.info("MCP request received", { requestId });
+  httpLogger.info("MCP request received", {
+    requestId,
+    relaxed: options.relaxed,
+  });
 
   let userId: string | null = null;
 
@@ -140,15 +162,23 @@ app.all("/mcp", async (c) => {
 
   mcpLogger.info("Starting MCP transport handler", { userId, requestId });
   try {
-    // Create a new transport for each request (per @hono/mcp pattern)
-    const transport = new StreamableHTTPTransport({
-      sessionIdGenerator: randomUUID,
-      enableDnsRebindingProtection: process.env.NODE_ENV === "production",
-    });
-
-    httpLogger.debug("Connecting transport to MCP server", { requestId });
-    await mcpServer.connect(transport);
-    httpLogger.debug("Transport connected", { requestId });
+    if (options.relaxed) {
+      if (!relaxedTransportReady) {
+        httpLogger.debug("Connecting relaxed transport to MCP server", {
+          requestId,
+        });
+        relaxedTransportReady = mcpServerJson.connect(relaxedTransport as any);
+      }
+      await relaxedTransportReady;
+      httpLogger.debug("Relaxed transport connected", { requestId });
+    } else {
+      if (!transportReady) {
+        httpLogger.debug("Connecting transport to MCP server", { requestId });
+        transportReady = mcpServer.connect(transport);
+      }
+      await transportReady;
+      httpLogger.debug("Transport connected", { requestId });
+    }
 
     let response: Response | undefined;
     await withTransportUserContext(userId, true, async () => {
@@ -156,7 +186,9 @@ app.all("/mcp", async (c) => {
         userId,
         requestId,
       });
-      response = await transport.handleRequest(c);
+      response = options.relaxed
+        ? await relaxedTransport.handleRequest(c)
+        : await transport.handleRequest(c);
       mcpLogger.debug("MCP handleRequest completed", { userId, requestId });
     });
     mcpLogger.info("MCP request completed successfully", { userId, requestId });
@@ -165,9 +197,15 @@ app.all("/mcp", async (c) => {
     return response;
   } catch (error) {
     mcpLogger.error("MCP endpoint error", error, userId, requestId);
+    if (error instanceof HTTPException) {
+      return error.getResponse();
+    }
     return c.json({ error: "Internal server error" }, 500);
   }
-});
+}
+
+app.all("/mcp", (c) => handleMcpRequest(c, { relaxed: false }));
+app.all("/mcp/json", (c) => handleMcpRequest(c, { relaxed: true }));
 
 // Health check
 app.get("/health", (c) => {

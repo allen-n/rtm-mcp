@@ -17,7 +17,7 @@ The authentication process is simple:
 2. Server calls `rtm.auth.getFrob` to get a temporary frob
 3. Server shows a page with two buttons:
    - Button 1: Opens RTM authorization page in new tab (includes the frob in URL)
-   - Button 2: "I've Authorized" callback link
+   - Button 2: "I've Authorized" completion link
 4. User clicks Button 1, approves on RTM
 5. RTM shows "Return to your application" message
 6. User returns and clicks Button 2

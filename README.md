@@ -30,7 +30,11 @@ The server handles RTM authentication, timeline management, and exposes your tas
 - Node.js 20+
 - pnpm 9+
 - Remember The Milk account
-- [RTM API Key](https://www.rememberthemilk.com/services/api/) (free)
+- [RTM API Key](https://www.rememberthemilk.com/services/api/) (free) - **See RTM API Key Setup below**
+
+## RTM API Key Setup
+
+Good news! This project uses RTM's **desktop authentication flow**, which means **no callback URL configuration is required**. Just get your API key and shared secret from RTM, and you're ready to go!
 
 ## Quick Start
 
@@ -60,15 +64,35 @@ BETTER_AUTH_SECRET=$(openssl rand -hex 32)
 
 # Generate a random secret for webhook verification (optional)
 RTM_WEBHOOK_SECRET=$(openssl rand -hex 32)
+
+# Local Postgres defaults (change if you already run Postgres)
+POSTGRES_USER=rtm
+POSTGRES_PASSWORD=rtm
+POSTGRES_DB=rtmdb
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_SSL=false
+# Optional override (otherwise derived from the values above)
+# DATABASE_URL=postgres://rtm:rtm@localhost:5432/rtmdb
 ```
 
-### 3. Run Database Migration
+If `DATABASE_URL` is omitted, the server builds it from the `POSTGRES_*` values (so changing `POSTGRES_PORT` automatically updates local clients), while the Docker services continue using their internal `postgres` hostname.
+
+### 3. Start Postgres (Docker recommended)
+
+```bash
+docker compose up -d postgres
+```
+
+> The default credentials live in `.env`. Change `POSTGRES_PORT` if you already run Postgres locally.
+
+### 4. Run Database Migration
 
 ```bash
 pnpm migrate
 ```
 
-### 4. Start Development Servers
+### 5. Start Development Servers
 
 ```bash
 # Terminal 1: MCP Server
@@ -81,17 +105,31 @@ pnpm dev:web
 The MCP server runs on `http://localhost:8787`  
 The web portal runs on `http://localhost:3000`
 
-### 5. Connect Your RTM Account
+### 6. Connect Your RTM Account
 
 1. Visit `http://localhost:8787/rtm/start`
-2. Authorize the application on Remember The Milk
-3. You'll be redirected back with a success message
+2. Click the button to open Remember The Milk
+3. Authorize the application on RTM
+4. Return to the browser tab and click "I've Authorized - Complete Setup"
+5. You'll see a success message when connected!
 
-### 6. Test with MCP Inspector
+### 7. Test with MCP Inspector
 
 ```bash
 npx @modelcontextprotocol/inspector node apps/mcp-server/dist/index.js
 ```
+
+### HTTP Clients (SSE vs JSON)
+
+The default MCP HTTP endpoint is `/mcp` and follows the Streamable HTTP spec (requires `Accept: application/json, text/event-stream` and an `initialize` request + `Mcp-Session-Id` for follow-up calls).
+
+For JSON-only clients that don't support SSE, use the compatibility endpoint:
+
+```
+POST /mcp/json
+```
+
+This endpoint accepts plain JSON requests and returns plain JSON responses.
 
 ## Project Structure
 
@@ -184,9 +222,12 @@ pnpm --filter @apps/mcp-server build
 # Run pending migrations
 pnpm migrate
 
+# Refresh generated Kysely types after schema changes
+pnpm --filter @packages/db generate
+
 # Create new migration
 cd packages/db
-# Add new .ts file in src/migrations/ with format: NNNN_description.ts
+# Add new .ts file in src/migrations/ with format: <UTC_Timestamp>_description.ts
 ```
 
 ## Deployment
@@ -213,7 +254,7 @@ docker compose up
    railway up
    ```
 
-**Important:** Set the correct `RTM_CALLBACK_URL` to your Railway domain.
+**Important:** The desktop flow does **not** require `RTM_CALLBACK_URL`. It can be left unset in production unless you switch to the web-based auth flow.
 
 ## Known Issues & TODOs
 
@@ -236,13 +277,12 @@ This differs from storing a single permanent timeline per user.
 
 ### Database Choice
 
-Using SQLite with Kysely for:
-- Zero-configuration development
-- Easy Railway deployment
-- Type-safe queries
-- Simple migrations
+PostgreSQL (via the official Docker image) is the default backing store:
+- Works well locally thanks to `docker compose up -d postgres`
+- Shared across services through a single `DATABASE_URL`
+- Still powered by type-safe queries and migrations through Kysely
 
-For production at scale, consider PostgreSQL.
+Need remote hosting? Point `DATABASE_URL` at your managed Postgres, set `POSTGRES_SSL=true`, and skip the local container.
 
 ### Monorepo Structure
 

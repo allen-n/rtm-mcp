@@ -9,11 +9,18 @@ import type { DB } from "./schema";
 types.setTypeParser(types.builtins.TIMESTAMPTZ, (val) => new Date(val));
 types.setTypeParser(types.builtins.TIMESTAMP, (val) => new Date(val));
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const resolveBaseDir = () => {
+  if (typeof __dirname === "string") return __dirname;
+  if (typeof import.meta !== "undefined" && import.meta.url) {
+    return path.dirname(fileURLToPath(import.meta.url));
+  }
+  return process.cwd();
+};
+
+const baseDir = resolveBaseDir();
 
 function findEnvPath(): string | undefined {
-  let dir = __dirname;
+  let dir = baseDir;
   const { root } = path.parse(dir);
   while (dir && dir !== root) {
     const candidate = path.join(dir, ".env");

@@ -39,7 +39,7 @@ export function authRoutes() {
             perms: "pending",
             status: "pending",
             updated_at: now,
-          })
+          }),
         )
         .execute();
 
@@ -49,7 +49,7 @@ export function authRoutes() {
       // Redirect to web app with auth URL
       const webAppUrl = process.env.WEB_APP_URL || "http://localhost:3000";
       const redirectUrl = `${webAppUrl}/rtm/connect?authUrl=${encodeURIComponent(
-        authUrl
+        authUrl,
       )}`;
       return c.redirect(redirectUrl);
     } catch (error) {
@@ -78,7 +78,7 @@ export function authRoutes() {
       if (!tokenRecord) {
         return c.text(
           "No authorization found. Please start the auth flow again.",
-          400
+          400,
         );
       }
 
@@ -91,7 +91,7 @@ export function authRoutes() {
       if (tokenRecord.status !== "pending") {
         return c.text(
           "Invalid authorization status. Please start the auth flow again.",
-          400
+          400,
         );
       }
 
@@ -123,7 +123,7 @@ export function authRoutes() {
             email_verified: true,
             name: user.name || "",
             updated_at: now,
-          })
+          }),
         )
         .execute();
 
@@ -147,7 +147,7 @@ export function authRoutes() {
             username: auth.user.username,
             fullname: auth.user.fullname,
             updated_at: now,
-          })
+          }),
         )
         .execute();
 
@@ -259,8 +259,30 @@ export function authRoutes() {
           error: "Failed to check status",
           details: error instanceof Error ? error.message : String(error),
         },
-        500
+        500,
       );
+    }
+  });
+
+  app.post("/disconnect", async (c) => {
+    const session = await getSession(c.req.raw);
+    if (!session?.user) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    try {
+      const user = session.user;
+
+      // Delete token from our database - user must revoke on RTM website first
+      await db
+        .deleteFrom("rtm_tokens")
+        .where("user_id", "=", user.id)
+        .execute();
+
+      return c.json({ success: true });
+    } catch (error) {
+      console.error("Disconnect error:", error);
+      return c.json({ error: "Failed to disconnect" }, 500);
     }
   });
 

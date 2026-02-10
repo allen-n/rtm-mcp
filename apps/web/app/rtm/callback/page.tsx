@@ -1,12 +1,23 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function RtmCallbackPage() {
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading"
+    "loading",
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +41,7 @@ export default function RtmCallbackPage() {
         setError(
           err instanceof Error
             ? err.message
-            : "Failed to complete authorization"
+            : "Failed to complete authorization",
         );
         setStatus("error");
       }
@@ -45,137 +56,70 @@ export default function RtmCallbackPage() {
 
   if (status === "loading") {
     return (
-      <main style={{ maxWidth: "48rem", margin: "4rem auto", padding: "1rem" }}>
-        <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              display: "inline-block",
-              width: "3rem",
-              height: "3rem",
-              border: "2px solid #e5e7eb",
-              borderTopColor: "#2563eb",
-              borderRadius: "50%",
-              animation: "spin 1s linear infinite",
-              marginBottom: "1rem",
-            }}
-          ></div>
-          <p style={{ fontSize: "1.125rem", color: "#374151" }}>
-            Completing authorization with Remember The Milk...
-          </p>
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <div className="text-center space-y-1">
+            <p className="text-lg font-medium">
+              Completing authorization with Remember The Milk...
+            </p>
+            <p className="text-sm text-muted-foreground">
+              This should only take a moment.
+            </p>
+          </div>
         </div>
-        <style jsx>{`
-          @keyframes spin {
-            to {
-              transform: rotate(360deg);
-            }
-          }
-        `}</style>
-      </main>
+      </div>
     );
   }
 
   if (status === "error") {
     return (
-      <main style={{ maxWidth: "48rem", margin: "4rem auto", padding: "1rem" }}>
-        <div
-          style={{
-            backgroundColor: "#fef2f2",
-            border: "1px solid #fecaca",
-            borderRadius: "0.5rem",
-            padding: "2rem",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: "3.75rem", marginBottom: "1rem" }}>❌</div>
-          <h1
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: "bold",
-              color: "#7f1d1d",
-              marginBottom: "1rem",
-            }}
-          >
-            Connection Failed
-          </h1>
-          <p style={{ color: "#991b1b", marginBottom: "1.5rem" }}>{error}</p>
-          <div
-            style={{ display: "flex", gap: "1rem", justifyContent: "center" }}
-          >
-            <button
-              onClick={() => router.push("/dashboard")}
-              style={{
-                padding: "0.75rem 1.5rem",
-                backgroundColor: "#dc2626",
-                color: "white",
-                fontWeight: "500",
-                borderRadius: "0.5rem",
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              Return to Dashboard
-            </button>
-            <button
-              onClick={() => router.push("/dashboard")}
-              style={{
-                padding: "0.75rem 1.5rem",
-                backgroundColor: "#e5e7eb",
-                color: "#1f2937",
-                fontWeight: "500",
-                borderRadius: "0.5rem",
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-      </main>
+      <div className="container max-w-xl py-12">
+        <Card className="border-destructive/40">
+          <CardHeader className="space-y-2 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+              <XCircle className="h-6 w-6" />
+            </div>
+            <CardTitle>Connection failed</CardTitle>
+            <CardDescription>
+              We couldn&apos;t finish linking your RTM account.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Alert variant="destructive">
+              <AlertTitle>Details</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+              <Button variant="destructive" onClick={handleGoHome}>
+                Return to dashboard
+              </Button>
+              <Button variant="outline" onClick={handleGoHome}>
+                Try again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <main style={{ maxWidth: "48rem", margin: "4rem auto", padding: "1rem" }}>
-      <div
-        style={{
-          backgroundColor: "#f0fdf4",
-          border: "1px solid #bbf7d0",
-          borderRadius: "0.5rem",
-          padding: "2rem",
-          textAlign: "center",
-        }}
-      >
-        <div style={{ fontSize: "3.75rem", marginBottom: "1rem" }}>✅</div>
-        <h1
-          style={{
-            fontSize: "1.5rem",
-            fontWeight: "bold",
-            color: "#14532d",
-            marginBottom: "1rem",
-          }}
-        >
-          Successfully connected to Remember The Milk!
-        </h1>
-        <p style={{ color: "#15803d", marginBottom: "1.5rem" }}>
-          Your Remember The Milk account is now connected. You can now use it
-          with AI assistants via MCP.
-        </p>
-        <button
-          onClick={handleGoHome}
-          style={{
-            padding: "0.75rem 1.5rem",
-            backgroundColor: "#16a34a",
-            color: "white",
-            fontWeight: "500",
-            borderRadius: "0.5rem",
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          Go to Dashboard
-        </button>
-      </div>
-    </main>
+    <div className="container max-w-xl py-12">
+      <Card className="border-green-200 bg-green-50/70 text-green-900 dark:border-green-900/40 dark:bg-green-950/40 dark:text-green-50">
+        <CardHeader className="space-y-2 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-600/10 text-green-700 dark:text-green-200">
+            <CheckCircle2 className="h-6 w-6" />
+          </div>
+          <CardTitle>Connected to Remember The Milk</CardTitle>
+          <CardDescription className="text-green-800/80 dark:text-green-100/70">
+            Your account is linked. You can start using the RTM MCP server now.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center">
+          <Button onClick={handleGoHome}>Go to dashboard</Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

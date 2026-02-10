@@ -1,7 +1,25 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  Info,
+  Loader2,
+  ListTodo,
+} from "lucide-react";
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 function RtmConnectContent() {
   const router = useRouter();
@@ -10,7 +28,6 @@ function RtmConnectContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get the auth URL from query params (passed from backend)
     const url = searchParams.get("authUrl");
     if (url) {
       setAuthUrl(decodeURIComponent(url));
@@ -25,159 +42,119 @@ function RtmConnectContent() {
 
   if (error) {
     return (
-      <main style={{ maxWidth: "48rem", margin: "4rem auto", padding: "1rem" }}>
-        <div
-          style={{
-            backgroundColor: "#fef2f2",
-            border: "1px solid #fecaca",
-            borderRadius: "0.5rem",
-            padding: "1.5rem",
-          }}
-        >
-          <h1
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: "bold",
-              color: "#7f1d1d",
-              marginBottom: "0.5rem",
-            }}
-          >
-            Error
-          </h1>
-          <p style={{ color: "#991b1b" }}>{error}</p>
-          <button
-            onClick={() => router.push("/dashboard")}
-            style={{
-              marginTop: "1rem",
-              padding: "0.5rem 1rem",
-              backgroundColor: "#dc2626",
-              color: "white",
-              border: "none",
-              borderRadius: "0.375rem",
-              cursor: "pointer",
-            }}
-          >
-            Return to Dashboard
-          </button>
-        </div>
-      </main>
+      <div className="container max-w-3xl py-12">
+        <Card className="border-destructive/40">
+          <CardHeader className="space-y-2 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <CardTitle>Something went wrong</CardTitle>
+            <CardDescription>
+              We couldn&apos;t start the RTM authorization.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert variant="destructive">
+              <AlertTitle>Details</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+            <div className="flex justify-center">
+              <Button
+                variant="destructive"
+                onClick={() => router.push("/dashboard")}
+              >
+                Return to dashboard
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   if (!authUrl) {
     return (
-      <main style={{ maxWidth: "48rem", margin: "4rem auto", padding: "1rem" }}>
-        <p>Loading...</p>
-      </main>
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">
+            Preparing your authorization link...
+          </p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <main style={{ maxWidth: "48rem", margin: "4rem auto", padding: "1rem" }}>
-      <h1
-        style={{
-          fontSize: "1.875rem",
-          fontWeight: "bold",
-          marginBottom: "2rem",
-        }}
-      >
-        🔗 Connect to Remember The Milk
-      </h1>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-        {/* Step 1 */}
-        <div
-          style={{
-            backgroundColor: "#f9fafb",
-            borderRadius: "0.5rem",
-            padding: "1.5rem",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "1.25rem",
-              fontWeight: "600",
-              marginBottom: "0.75rem",
-            }}
-          >
-            Step 1: Authorize on RTM
-          </h2>
-          <p style={{ color: "#374151", marginBottom: "1rem" }}>
-            Click the button below to open Remember The Milk and authorize this
-            application:
-          </p>
-          <a
-            href={authUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: "inline-block",
-              padding: "0.75rem 1.5rem",
-              backgroundColor: "#2563eb",
-              color: "white",
-              fontWeight: "500",
-              borderRadius: "0.5rem",
-              textDecoration: "none",
-            }}
-          >
-            Open Remember The Milk
-          </a>
+    <div className="container max-w-3xl py-12 space-y-8">
+      <div className="space-y-3">
+        <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+          <ListTodo className="h-4 w-4" />
+          Remember The Milk
         </div>
-
-        {/* Step 2 */}
-        <div
-          style={{
-            backgroundColor: "#f9fafb",
-            borderRadius: "0.5rem",
-            padding: "1.5rem",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "1.25rem",
-              fontWeight: "600",
-              marginBottom: "0.75rem",
-            }}
-          >
-            Step 2: Return Here
-          </h2>
-          <p style={{ color: "#374151", marginBottom: "1rem" }}>
-            After authorizing on RTM, click this button to complete the
-            connection:
-          </p>
-          <button
-            onClick={handleComplete}
-            style={{
-              padding: "0.75rem 1.5rem",
-              backgroundColor: "#374151",
-              color: "white",
-              fontWeight: "500",
-              borderRadius: "0.5rem",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            I've Authorized - Complete Setup
-          </button>
-        </div>
-
-        {/* Help text */}
-        <div
-          style={{
-            backgroundColor: "#eff6ff",
-            border: "1px solid #bfdbfe",
-            borderRadius: "0.5rem",
-            padding: "1rem",
-          }}
-        >
-          <p style={{ fontSize: "0.875rem", color: "#1e3a8a" }}>
-            <strong>Note:</strong> You'll need to complete the authorization on
-            Remember The Milk's website before clicking the "Complete Setup"
-            button.
-          </p>
-        </div>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          Connect Remember The Milk
+        </h1>
+        <p className="text-muted-foreground">
+          Follow the quick two-step flow to authorize your account and finish
+          setup.
+        </p>
       </div>
-    </main>
+
+      <div className="grid gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <div className="space-y-1">
+              <CardTitle className="text-xl">
+                Step 1: Authorize on RTM
+              </CardTitle>
+              <CardDescription>
+                Open Remember The Milk in a new tab and grant access to this
+                application.
+              </CardDescription>
+            </div>
+            <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button asChild>
+              <a href={authUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Open Remember The Milk
+              </a>
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              A new window will open so you can confirm access.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-xl">Step 2: Finish connection</CardTitle>
+            <CardDescription>
+              After you&apos;ve authorized RTM, return here to complete setup.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button onClick={handleComplete} className="w-full sm:w-auto">
+              I&apos;ve authorized - complete setup
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              We&apos;ll verify your authorization and link your account.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle>Need a tip?</AlertTitle>
+          <AlertDescription>
+            Keep this tab open while you authorize in RTM. Once you&apos;re
+            done, click "complete setup" to finish connecting.
+          </AlertDescription>
+        </Alert>
+      </div>
+    </div>
   );
 }
 
@@ -185,11 +162,12 @@ export default function RtmConnectPage() {
   return (
     <Suspense
       fallback={
-        <main
-          style={{ maxWidth: "48rem", margin: "4rem auto", padding: "1rem" }}
-        >
-          <p>Loading...</p>
-        </main>
+        <div className="min-h-screen flex items-center justify-center px-4">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span>Loading...</span>
+          </div>
+        </div>
       }
     >
       <RtmConnectContent />

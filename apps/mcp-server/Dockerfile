@@ -1,32 +1,35 @@
-FROM node:20-slim AS base
+#syntax=docker/dockerfile:1
+
+FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat
+RUN corepack enable
+
+FROM base AS build
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages/ packages/
-COPY apps/mcp-server/package.json apps/mcp-server/
+COPY . .
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 
-COPY apps/mcp-server/ apps/mcp-server/
-
+# Build all workspace packages (tsc for mcp-server)
 RUN pnpm --filter @apps/mcp-server build
 
-FROM node:20-slim AS runner
+# Deploy with production dependencies
+RUN pnpm --filter @apps/mcp-server --prod deploy /prod/mcp-server
+
+FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV PORT=8787
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 mcp
 
-COPY --from=base /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
-COPY --from=base /app/packages/ packages/
-COPY --from=base /app/apps/mcp-server/ apps/mcp-server/
-COPY --from=base /app/node_modules/ node_modules/
+COPY --from=build --chown=mcp:nodejs /prod/mcp-server .
+
+USER mcp
 
 EXPOSE 8787
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8787/health || exit 1
-
-CMD ["pnpm", "--filter", "@apps/mcp-server", "start"]
+CMD ["node", "dist/index.cjs"]

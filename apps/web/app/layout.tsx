@@ -1,22 +1,22 @@
-import React from "react";
-import { AuthProvider } from "../components/auth-provider";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
 
-export const metadata = {
-  title: "MCP-RTM Portal",
-  description:
-    "Connect your Remember The Milk account to use with AI assistants via MCP",
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "RTM MCP Server",
+  description: "Connect Remember The Milk to Claude and other AI assistants via MCP",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
-      <body>
-        <AuthProvider>{children}</AuthProvider>
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }

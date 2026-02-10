@@ -12,13 +12,28 @@ const API_VERSION = "2";
 export class RtmClient {
   private apiKey: string;
   private sharedSecret: string;
-  private limiter: Bottleneck;
+  // RTM rate limit is per-user, so we use Bottleneck.Group to create
+  // separate limiters for each user (keyed by auth token)
+  private limiterGroup: Bottleneck.Group;
 
   constructor(apiKey: string, sharedSecret: string) {
     this.apiKey = apiKey;
     this.sharedSecret = sharedSecret;
-    // RTM allows ~1 req/sec per user; pad to 1100ms to respect the limit with margin
-    this.limiter = new Bottleneck({ maxConcurrent: 1, minTime: 1100 });
+    // RTM allows ~1 req/sec per user, we use 1100ms between requests for safety margin
+    this.limiterGroup = new Bottleneck.Group({
+      maxConcurrent: 1,
+      minTime: 1100,
+    });
+  }
+
+  /**
+   * Get the rate limiter for a specific user (keyed by auth token)
+   * Unauthenticated requests share a default limiter
+   */
+  private getLimiter(authToken?: string): Bottleneck {
+    // Use auth token as key, or "__default__" for unauthenticated calls
+    const key = authToken || "__default__";
+    return this.limiterGroup.key(key);
   }
 
   /**
@@ -54,8 +69,11 @@ export class RtmClient {
     // Build query string
     const qs = new URLSearchParams(allParams).toString();
 
+    // Get the per-user rate limiter
+    const limiter = this.getLimiter(authToken);
+
     try {
-      const { body, statusCode } = await this.limiter.schedule(() =>
+      const { body, statusCode } = await limiter.schedule(() =>
         request(`${API_BASE}?${qs}`, {
           method: "GET",
           headers: { "User-Agent": "MCP-RTM/1.0" },

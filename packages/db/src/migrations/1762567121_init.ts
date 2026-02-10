@@ -17,6 +17,13 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     )
     .execute();
 
+  // Add index on email for auth lookups
+  await db.schema
+    .createIndex("user_email_idx")
+    .on("user")
+    .column("email")
+    .execute();
+
   // Session table (BetterAuth)
   await db.schema
     .createTable("session")
@@ -58,6 +65,14 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn("updated_at", "timestamptz", (col) =>
       col.defaultTo(sql`CURRENT_TIMESTAMP`).notNull()
     )
+    .execute();
+
+  // Add unique constraint on (provider, provider_account_id) to prevent duplicate OAuth identities
+  await db.schema
+    .createIndex("account_provider_account_unique")
+    .on("account")
+    .columns(["provider", "provider_account_id"])
+    .unique()
     .execute();
 
   // Verification table (BetterAuth)

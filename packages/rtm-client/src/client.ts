@@ -17,8 +17,8 @@ export class RtmClient {
   constructor(apiKey: string, sharedSecret: string) {
     this.apiKey = apiKey;
     this.sharedSecret = sharedSecret;
-    // RTM allows ~1 req/sec per user, we use 800ms between requests to be safe
-    this.limiter = new Bottleneck({ maxConcurrent: 1, minTime: 800 });
+    // RTM allows ~1 req/sec per user; pad to 1100ms to respect the limit with margin
+    this.limiter = new Bottleneck({ maxConcurrent: 1, minTime: 1100 });
   }
 
   /**

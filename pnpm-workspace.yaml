@@ -1,6 +1,3 @@
 packages:
   - "apps/*"
   - "packages/*"
-
-# Required for pnpm deploy to properly include workspace dependencies
-injectWorkspacePackages: true

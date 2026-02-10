@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
-export default function RtmConnectPage() {
+function RtmConnectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [authUrl, setAuthUrl] = useState<string | null>(null);
@@ -178,5 +178,21 @@ export default function RtmConnectPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function RtmConnectPage() {
+  return (
+    <Suspense
+      fallback={
+        <main
+          style={{ maxWidth: "48rem", margin: "4rem auto", padding: "1rem" }}
+        >
+          <p>Loading...</p>
+        </main>
+      }
+    >
+      <RtmConnectContent />
+    </Suspense>
   );
 }

@@ -101,7 +101,11 @@ export function ApiKeySection() {
   }
 
   async function handleDeleteKey(keyId: string) {
-    if (!confirm("Are you sure you want to delete this API key? This cannot be undone.")) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this API key? This cannot be undone.",
+      )
+    ) {
       return;
     }
 
@@ -183,7 +187,9 @@ export function ApiKeySection() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium">{key.name || "Unnamed"}</span>
+                      <span className="font-medium">
+                        {key.name || "Unnamed"}
+                      </span>
                       {key.enabled === false && (
                         <Badge variant="secondary">Disabled</Badge>
                       )}
@@ -191,10 +197,12 @@ export function ApiKeySection() {
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        Created {formatDate(key.createdAt)}
+                        Created {formatDate(String(key.createdAt))}
                       </span>
                       {key.lastRequest && (
-                        <span>Last used {formatDate(key.lastRequest)}</span>
+                        <span>
+                          Last used {formatDate(String(key.lastRequest))}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -245,7 +253,10 @@ export function ApiKeySection() {
             >
               Cancel
             </Button>
-            <Button onClick={handleCreateKey} disabled={creating || !newKeyName.trim()}>
+            <Button
+              onClick={handleCreateKey}
+              disabled={creating || !newKeyName.trim()}
+            >
               {creating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -260,7 +271,10 @@ export function ApiKeySection() {
       </Dialog>
 
       {/* Created Key Dialog */}
-      <Dialog open={showCreatedKeyDialog} onOpenChange={setShowCreatedKeyDialog}>
+      <Dialog
+        open={showCreatedKeyDialog}
+        onOpenChange={setShowCreatedKeyDialog}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -279,7 +293,9 @@ export function ApiKeySection() {
                 won't be shown again.
               </AlertDescription>
             </Alert>
-            <label className="text-sm font-medium mb-2 block">Your API Key</label>
+            <label className="text-sm font-medium mb-2 block">
+              Your API Key
+            </label>
             <div className="flex gap-2">
               <code className="flex-1 px-3 py-2 bg-muted rounded-md text-sm font-mono break-all">
                 {createdKey?.key}
@@ -301,9 +317,7 @@ export function ApiKeySection() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => setShowCreatedKeyDialog(false)}>
-              Done
-            </Button>
+            <Button onClick={() => setShowCreatedKeyDialog(false)}>Done</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

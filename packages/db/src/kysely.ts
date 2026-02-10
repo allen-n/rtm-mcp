@@ -27,6 +27,9 @@ if (!process.env.DATABASE_URL) {
       }
     } catch {
       // dotenv not available, skip
+      console.warn(
+        "dotenv not found, skipping .env loading. Make sure to set environment variables in production.",
+      );
     }
   };
   // Note: This is sync-ish for backwards compat, but env loading is best-effort

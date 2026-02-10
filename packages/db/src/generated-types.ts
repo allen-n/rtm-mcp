@@ -5,9 +5,10 @@
 
 import type { ColumnType } from "kysely";
 
-export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
-  ? ColumnType<S, I | undefined, U>
-  : ColumnType<T, T | undefined, T>;
+export type Generated<T> =
+  T extends ColumnType<infer S, infer I, infer U>
+    ? ColumnType<S, I | undefined, U>
+    : ColumnType<T, T | undefined, T>;
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
@@ -23,7 +24,7 @@ export interface Account {
   refresh_token: string | null;
   refreshTokenExpiresAt: Timestamp | null;
   scope: string | null;
-  updated_at: Timestamp;
+  updated_at: Generated<Timestamp>;
   user_id: string;
 }
 
@@ -64,7 +65,7 @@ export interface RtmTokens {
   fullname: string | null;
   perms: string;
   status: string;
-  updated_at: Timestamp;
+  updated_at: Generated<Timestamp>;
   user_id: string;
   username: string | null;
 }
@@ -75,7 +76,7 @@ export interface Session {
   id: string;
   ip_address: string | null;
   token: string;
-  updated_at: Timestamp;
+  updated_at: Generated<Timestamp>;
   user_agent: string | null;
   user_id: string;
 }
@@ -108,7 +109,7 @@ export interface WebhookSubs {
   status: string;
   subscription_id: string;
   topics: string;
-  updated_at: Timestamp;
+  updated_at: Generated<Timestamp>;
   url: string;
   user_id: string;
 }

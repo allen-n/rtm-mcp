@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "migrate": "turbo run migrate --filter=@packages/db"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",

@@ -1,169 +1,213 @@
 "use client";
 
-import { authClient } from "@packages/auth/src/client";
-import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import { useState } from "react";
+import Link from "next/link";
+import { authClient } from "@auth/client";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, Mail, Lock, Loader2, Github } from "lucide-react";
 
 export default function LoginPage() {
-  const router = useRouter();
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError(null);
 
     try {
-      const result = await authClient.signIn.email({
-        email,
-        password,
-      });
+      if (isLogin) {
+        const result = await authClient.signIn.email({
+          email,
+          password,
+          callbackURL: "/dashboard",
+        });
 
-      if (result.error) {
-        setError(result.error.message || "Failed to sign in");
-        return;
+        if (result.error) {
+          setError(result.error.message || "Login failed");
+        }
+      } else {
+        const result = await authClient.signUp.email({
+          email,
+          password,
+          name,
+          callbackURL: "/dashboard",
+        });
+
+        if (result.error) {
+          setError(result.error.message || "Sign up failed");
+        }
       }
-
-      // Success - redirect to dashboard
-      router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError("An unexpected error occurred");
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  async function handleGitHubSignIn() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      await authClient.signIn.social({
+        provider: "github",
+        callbackURL: "/dashboard",
+      });
+    } catch (err) {
+      setError("GitHub sign in failed");
+      setLoading(false);
+    }
+  }
 
   return (
-    <main style={{ maxWidth: "28rem", margin: "4rem auto", padding: "2rem" }}>
-      <h1
-        style={{
-          fontSize: "1.875rem",
-          fontWeight: "bold",
-          marginBottom: "0.5rem",
-        }}
-      >
-        Sign In
-      </h1>
-      <p style={{ color: "#6b7280", marginBottom: "2rem" }}>
-        Sign in to connect your Remember The Milk account
-      </p>
-
-      <form
-        onSubmit={handleSubmit}
-        style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-      >
-        <div>
-          <label
-            htmlFor="email"
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontSize: "0.875rem",
-              fontWeight: "500",
-            }}
-          >
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              border: "1px solid #d1d5db",
-              borderRadius: "0.375rem",
-              fontSize: "1rem",
-            }}
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="password"
-            style={{
-              display: "block",
-              marginBottom: "0.5rem",
-              fontSize: "0.875rem",
-              fontWeight: "500",
-            }}
-          >
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              border: "1px solid #d1d5db",
-              borderRadius: "0.375rem",
-              fontSize: "1rem",
-            }}
-          />
-        </div>
-
-        {error && (
-          <div
-            style={{
-              padding: "0.75rem",
-              backgroundColor: "#fef2f2",
-              color: "#991b1b",
-              borderRadius: "0.375rem",
-              fontSize: "0.875rem",
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            width: "100%",
-            padding: "0.75rem",
-            backgroundColor: loading ? "#9ca3af" : "#2563eb",
-            color: "white",
-            border: "none",
-            borderRadius: "0.375rem",
-            fontSize: "1rem",
-            fontWeight: "500",
-            cursor: loading ? "not-allowed" : "pointer",
-          }}
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <Link
+          href="/"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6"
         >
-          {loading ? "Signing in..." : "Sign In"}
-        </button>
-      </form>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to home
+        </Link>
 
-      <div
-        style={{
-          marginTop: "1.5rem",
-          textAlign: "center",
-          fontSize: "0.875rem",
-          color: "#6b7280",
-        }}
-      >
-        Don't have an account?{" "}
-        <a
-          href="/signup"
-          style={{
-            color: "#2563eb",
-            textDecoration: "none",
-            fontWeight: "500",
-          }}
-        >
-          Sign up
-        </a>
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">
+              {isLogin ? "Welcome back" : "Create an account"}
+            </CardTitle>
+            <CardDescription>
+              {isLogin
+                ? "Sign in to manage your RTM MCP connection"
+                : "Get started with RTM MCP Server"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {!isLogin && (
+                <div className="space-y-2">
+                  <label htmlFor="name" className="text-sm font-medium">
+                    Name
+                  </label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required={!isLogin}
+                  />
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium">
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    required
+                    minLength={8}
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {isLogin ? "Signing in..." : "Creating account..."}
+                  </>
+                ) : isLogin ? (
+                  "Sign in"
+                ) : (
+                  "Create account"
+                )}
+              </Button>
+            </form>
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleGitHubSignIn}
+              disabled={loading}
+            >
+              <Github className="h-4 w-4 mr-2" />
+              GitHub
+            </Button>
+
+            <p className="text-center text-sm text-muted-foreground mt-6">
+              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setError(null);
+                }}
+                className="text-primary hover:underline font-medium"
+              >
+                {isLogin ? "Sign up" : "Sign in"}
+              </button>
+            </p>
+          </CardContent>
+        </Card>
       </div>
-    </main>
+    </div>
   );
 }

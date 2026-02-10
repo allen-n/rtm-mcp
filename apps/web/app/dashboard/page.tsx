@@ -1,483 +1,277 @@
 "use client";
 
-import { authClient } from "@auth/client";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import { authClient } from "@auth/client";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ApiKeySection } from "./api-key-section";
+import {
+  LogOut,
+  CheckCircle2,
+  XCircle,
+  ExternalLink,
+  Copy,
+  Check,
+  Loader2,
+  RefreshCw,
+  ListTodo,
+} from "lucide-react";
 
-type RtmStatus = {
-  connected: boolean;
+const apiBase = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8787";
+
+type RtmStatus = "loading" | "connected" | "disconnected" | "error";
+
+interface RtmConnection {
+  status: RtmStatus;
   username?: string;
-  perms?: string;
-  lastUpdated?: string;
-  error?: string;
-  details?: {
-    checkToken?: { valid: boolean; error: string | null };
-    testLogin?: { valid: boolean; error: string | null };
-  };
-};
+  fullname?: string;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [rtmStatus, setRtmStatus] = useState<RtmStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showDisconnectModal, setShowDisconnectModal] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [verifyError, setVerifyError] = useState<string | null>(null);
-
-  // Use better-auth's reactive session hook
-  const session = authClient.useSession();
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [rtmConnection, setRtmConnection] = useState<RtmConnection>({
+    status: "loading",
+  });
+  const [copied, setCopied] = useState(false);
+  const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
     async function loadData() {
+      // Load user session
+      const session = await authClient.getSession();
+      if (!session.data?.user) {
+        router.push("/login");
+        return;
+      }
+      setUser({
+        name: session.data.user.name || "User",
+        email: session.data.user.email || "",
+      });
+
+      // Check RTM connection status
       try {
-        // Wait for session to finish loading before checking authentication
-        if (session.isPending) {
-          return; // Still loading, show spinner below
-        }
-
-        // Check if user is authenticated
-        if (!session.data?.user) {
-          router.push("/login");
-          return;
-        }
-
-        // Load RTM status
-        const apiBase =
-          process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8787";
-        const statusRes = await fetch(`${apiBase}/rtm/status`, {
+        const res = await fetch(`${apiBase}/rtm/status`, {
           credentials: "include",
         });
-
-        if (statusRes.ok) {
-          const status = await statusRes.json();
-          setRtmStatus(status);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.connected) {
+            setRtmConnection({
+              status: "connected",
+              username: data.username,
+              fullname: data.fullname,
+            });
+          } else {
+            setRtmConnection({ status: "disconnected" });
+          }
+        } else {
+          setRtmConnection({ status: "disconnected" });
         }
       } catch (error) {
-        console.error("Failed to load dashboard data:", error);
-      } finally {
-        setLoading(false);
+        setRtmConnection({ status: "error" });
       }
     }
 
     loadData();
-  }, [router, session.data, session.isPending]);
+  }, [router]);
 
-  const handleSignOut = async () => {
+  async function handleLogout() {
+    await authClient.signOut();
+    router.push("/");
+  }
+
+  async function handleConnectRtm() {
+    setConnecting(true);
     try {
-      await authClient.signOut();
-      router.push("/");
+      window.location.href = `${apiBase}/rtm/start`;
     } catch (error) {
-      console.error("Sign out failed:", error);
+      setConnecting(false);
     }
-  };
+  }
 
-  const handleDisconnectRtm = () => {
-    setShowDisconnectModal(true);
-    setVerifyError(null);
-  };
-
-  const handleVerifyDisconnect = async () => {
-    setVerifying(true);
-    setVerifyError(null);
-
+  async function handleDisconnectRtm() {
     try {
-      const apiBase =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8787";
-      const res = await fetch(`${apiBase}/rtm/verify-disconnect`, {
+      const res = await fetch(`${apiBase}/rtm/disconnect`, {
         method: "POST",
         credentials: "include",
       });
-
       if (res.ok) {
-        const data = await res.json();
-
-        if (data.revoked) {
-          // Successfully disconnected
-          setRtmStatus({ connected: false });
-          setShowDisconnectModal(false);
-          alert("Successfully disconnected from Remember The Milk!");
-        } else {
-          // Token still active
-          setVerifyError(
-            "Your token is still active. Please make sure you've revoked access on the RTM website."
-          );
-        }
-      } else {
-        setVerifyError("Failed to verify disconnect status. Please try again.");
+        setRtmConnection({ status: "disconnected" });
       }
     } catch (error) {
-      console.error("Verify disconnect failed:", error);
-      setVerifyError("Network error. Please try again.");
-    } finally {
-      setVerifying(false);
+      console.error("Failed to disconnect RTM:", error);
     }
-  };
+  }
 
-  // Show loading state while session is being fetched
-  if (session.isPending || loading) {
+  function copyServerUrl() {
+    navigator.clipboard.writeText(`${apiBase}/mcp/json`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  if (!user) {
     return (
-      <main style={{ maxWidth: "48rem", margin: "4rem auto", padding: "2rem" }}>
-        <p>Loading...</p>
-      </main>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
     );
   }
 
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8787";
-
   return (
-    <main style={{ maxWidth: "48rem", margin: "4rem auto", padding: "2rem" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "2rem",
-        }}
-      >
-        <h1 style={{ fontSize: "1.875rem", fontWeight: "bold" }}>Dashboard</h1>
-        <button
-          onClick={handleSignOut}
-          style={{
-            padding: "0.5rem 1rem",
-            backgroundColor: "#ef4444",
-            color: "white",
-            border: "none",
-            borderRadius: "0.375rem",
-            cursor: "pointer",
-          }}
-        >
-          Sign Out
-        </button>
-      </div>
-
-      <div
-        style={{
-          backgroundColor: "#f9fafb",
-          padding: "1.5rem",
-          borderRadius: "0.5rem",
-          marginBottom: "2rem",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: "1.25rem",
-            fontWeight: "600",
-            marginBottom: "0.5rem",
-          }}
-        >
-          Account
-        </h2>
-        <p style={{ color: "#6b7280" }}>
-          <strong>Email:</strong> {session.data?.user?.email}
-        </p>
-        {session.data?.user?.name && (
-          <p style={{ color: "#6b7280" }}>
-            <strong>Name:</strong> {session.data.user.name}
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome back, {user.name}
           </p>
-        )}
-      </div>
-
-      <div
-        style={{
-          backgroundColor: "#f9fafb",
-          padding: "1.5rem",
-          borderRadius: "0.5rem",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: "1.25rem",
-            fontWeight: "600",
-            marginBottom: "1rem",
-          }}
-        >
-          Remember The Milk Connection
-        </h2>
-
-        {rtmStatus?.connected ? (
-          <div>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                padding: "0.5rem 1rem",
-                backgroundColor: "#dcfce7",
-                color: "#166534",
-                borderRadius: "0.375rem",
-                marginBottom: "1rem",
-              }}
-            >
-              <span style={{ fontSize: "1.25rem" }}>✓</span>
-              <span>Connected</span>
-            </div>
-
-            <div style={{ marginBottom: "1rem" }}>
-              <p style={{ color: "#6b7280" }}>
-                <strong>Username:</strong> {rtmStatus.username}
-              </p>
-              <p style={{ color: "#6b7280" }}>
-                <strong>Permissions:</strong> {rtmStatus.perms}
-              </p>
-              {rtmStatus.lastUpdated && (
-                <p style={{ color: "#6b7280", fontSize: "0.875rem" }}>
-                  Last updated:{" "}
-                  {new Date(rtmStatus.lastUpdated).toLocaleString()}
-                </p>
-              )}
-            </div>
-
-            <button
-              onClick={handleDisconnectRtm}
-              style={{
-                padding: "0.5rem 1rem",
-                backgroundColor: "#ef4444",
-                color: "white",
-                border: "none",
-                borderRadius: "0.375rem",
-                cursor: "pointer",
-              }}
-            >
-              Disconnect
-            </button>
-          </div>
-        ) : (
-          <div>
-            {rtmStatus?.error && (
-              <div
-                style={{
-                  marginBottom: "1rem",
-                  padding: "1rem",
-                  backgroundColor: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  borderRadius: "0.375rem",
-                }}
-              >
-                <p
-                  style={{
-                    color: "#991b1b",
-                    fontWeight: "600",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  Connection Error: {rtmStatus.error}
-                </p>
-                {rtmStatus.details && (
-                  <div style={{ fontSize: "0.875rem", color: "#7f1d1d" }}>
-                    <p style={{ marginTop: "0.5rem" }}>
-                      <strong>checkToken:</strong>{" "}
-                      {rtmStatus.details.checkToken?.valid
-                        ? "✓ Valid"
-                        : "✗ Invalid"}
-                      {rtmStatus.details.checkToken?.error && (
-                        <span> - {rtmStatus.details.checkToken.error}</span>
-                      )}
-                    </p>
-                    <p style={{ marginTop: "0.25rem" }}>
-                      <strong>testLogin:</strong>{" "}
-                      {rtmStatus.details.testLogin?.valid
-                        ? "✓ Valid"
-                        : "✗ Invalid"}
-                      {rtmStatus.details.testLogin?.error && (
-                        <span> - {rtmStatus.details.testLogin.error}</span>
-                      )}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-            <p style={{ color: "#6b7280", marginBottom: "1rem" }}>
-              Connect your Remember The Milk account to use it with AI
-              assistants via MCP.
-            </p>
-            <a
-              href={`${apiBase}/rtm/start`}
-              style={{
-                display: "inline-block",
-                padding: "0.75rem 1.5rem",
-                backgroundColor: "#2563eb",
-                color: "white",
-                borderRadius: "0.5rem",
-                textDecoration: "none",
-              }}
-            >
-              Connect Remember The Milk
-            </a>
-          </div>
-        )}
-      </div>
-
-      {/* API Key Management Section */}
-      <ApiKeySection />
-
-      {/* Disconnect Modal */}
-      {showDisconnectModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-          onClick={() => !verifying && setShowDisconnectModal(false)}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              borderRadius: "0.5rem",
-              padding: "2rem",
-              maxWidth: "32rem",
-              width: "90%",
-              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: "bold",
-                marginBottom: "1rem",
-              }}
-            >
-              Disconnect Remember The Milk
-            </h3>
-
-            <div style={{ marginBottom: "1.5rem" }}>
-              <p style={{ marginBottom: "1rem", color: "#374151" }}>
-                To disconnect safely, please follow these steps:
-              </p>
-
-              <div
-                style={{
-                  backgroundColor: "#f3f4f6",
-                  padding: "1rem",
-                  borderRadius: "0.375rem",
-                  marginBottom: "1rem",
-                }}
-              >
-                <p
-                  style={{
-                    fontWeight: "600",
-                    marginBottom: "0.5rem",
-                    color: "#1f2937",
-                  }}
-                >
-                  Step 1: Revoke Access on RTM
-                </p>
-                <p
-                  style={{
-                    fontSize: "0.875rem",
-                    color: "#4b5563",
-                    marginBottom: "0.75rem",
-                  }}
-                >
-                  Visit the RTM website to revoke this app's access:
-                </p>
-                <a
-                  href="https://www.rememberthemilk.com/app/#settings/apps"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "inline-block",
-                    padding: "0.5rem 1rem",
-                    backgroundColor: "#2563eb",
-                    color: "white",
-                    borderRadius: "0.375rem",
-                    textDecoration: "none",
-                    fontSize: "0.875rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  Open RTM Settings →
-                </a>
-              </div>
-
-              <div
-                style={{
-                  backgroundColor: "#f3f4f6",
-                  padding: "1rem",
-                  borderRadius: "0.375rem",
-                }}
-              >
-                <p
-                  style={{
-                    fontWeight: "600",
-                    marginBottom: "0.5rem",
-                    color: "#1f2937",
-                  }}
-                >
-                  Step 2: Complete Disconnect
-                </p>
-                <p style={{ fontSize: "0.875rem", color: "#4b5563" }}>
-                  After revoking access on RTM, click the button below to verify
-                  and complete the disconnect.
-                </p>
-              </div>
-
-              {verifyError && (
-                <div
-                  style={{
-                    marginTop: "1rem",
-                    padding: "0.75rem",
-                    backgroundColor: "#fef2f2",
-                    border: "1px solid #fecaca",
-                    borderRadius: "0.375rem",
-                    color: "#991b1b",
-                    fontSize: "0.875rem",
-                  }}
-                >
-                  {verifyError}
-                </div>
-              )}
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                gap: "0.75rem",
-                justifyContent: "flex-end",
-              }}
-            >
-              <button
-                onClick={() => setShowDisconnectModal(false)}
-                disabled={verifying}
-                style={{
-                  padding: "0.5rem 1rem",
-                  backgroundColor: "#e5e7eb",
-                  color: "#374151",
-                  border: "none",
-                  borderRadius: "0.375rem",
-                  cursor: verifying ? "not-allowed" : "pointer",
-                  opacity: verifying ? 0.5 : 1,
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleVerifyDisconnect}
-                disabled={verifying}
-                style={{
-                  padding: "0.5rem 1rem",
-                  backgroundColor: verifying ? "#9ca3af" : "#ef4444",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "0.375rem",
-                  cursor: verifying ? "not-allowed" : "pointer",
-                }}
-              >
-                {verifying ? "Verifying..." : "Verify & Complete Disconnect"}
-              </button>
-            </div>
-          </div>
         </div>
-      )}
-    </main>
+        <Button variant="outline" onClick={handleLogout}>
+          <LogOut className="h-4 w-4 mr-2" />
+          Sign out
+        </Button>
+      </div>
+
+      {/* RTM Connection Status */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                <ListTodo className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Remember The Milk</CardTitle>
+                <CardDescription>
+                  Connect your RTM account to use the MCP server
+                </CardDescription>
+              </div>
+            </div>
+            {rtmConnection.status === "connected" ? (
+              <Badge variant="success" className="gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                Connected
+              </Badge>
+            ) : rtmConnection.status === "loading" ? (
+              <Badge variant="secondary" className="gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Loading
+              </Badge>
+            ) : (
+              <Badge variant="destructive" className="gap-1">
+                <XCircle className="h-3 w-3" />
+                Not Connected
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {rtmConnection.status === "connected" ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div>
+                  <p className="font-medium">{rtmConnection.fullname}</p>
+                  <p className="text-sm text-muted-foreground">
+                    @{rtmConnection.username}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDisconnectRtm}
+                >
+                  Disconnect
+                </Button>
+              </div>
+            </div>
+          ) : rtmConnection.status === "loading" ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <Alert>
+                <AlertTitle>Connect your RTM account</AlertTitle>
+                <AlertDescription>
+                  You need to authorize access to Remember The Milk to use the
+                  MCP tools.
+                </AlertDescription>
+              </Alert>
+              <Button onClick={handleConnectRtm} disabled={connecting}>
+                {connecting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Connect Remember The Milk
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* MCP Server Configuration */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>MCP Server Configuration</CardTitle>
+          <CardDescription>
+            Use these settings to connect your MCP client (Claude Desktop,
+            Cursor, etc.)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-2 block">Server URL</label>
+            <div className="flex gap-2">
+              <code className="flex-1 px-3 py-2 bg-muted rounded-md text-sm font-mono">
+                {apiBase}/mcp/json
+              </code>
+              <Button variant="outline" size="icon" onClick={copyServerUrl}>
+                {copied ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <div className="bg-muted p-4 rounded-lg">
+            <p className="text-sm font-medium mb-2">Claude Desktop Config</p>
+            <pre className="text-xs overflow-x-auto">
+{`{
+  "mcpServers": {
+    "rtm": {
+      "url": "${apiBase}/mcp/json",
+      "headers": {
+        "x-api-key": "YOUR_API_KEY"
+      }
+    }
+  }
+}`}
+            </pre>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* API Keys Section */}
+      <ApiKeySection />
+    </div>
   );
 }

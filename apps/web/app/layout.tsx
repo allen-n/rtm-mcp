@@ -6,7 +6,12 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "RTM MCP Server",
-  description: "Connect Remember The Milk to Claude and other AI assistants via MCP",
+  description:
+    "Connect Remember The Milk to Claude and other AI assistants via MCP",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

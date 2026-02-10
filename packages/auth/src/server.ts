@@ -2,7 +2,7 @@ import { pool } from "@db/kysely"; // If using better auth cli, use the absolute
 import { betterAuth } from "better-auth";
 import { apiKey } from "better-auth/plugins";
 import type { Session, SessionUser } from "./types";
-console.log("env", process.env);
+
 const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
 if (!betterAuthSecret) {
   throw new Error("BETTER_AUTH_SECRET environment variable is required");

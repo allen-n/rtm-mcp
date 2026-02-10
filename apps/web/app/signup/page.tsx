@@ -1,6 +1,6 @@
 "use client";
 
-import { authClient } from "@packages/auth/src/client";
+import { authClient } from "@auth/client";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 

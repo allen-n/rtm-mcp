@@ -9,17 +9,17 @@ RUN corepack enable
 WORKDIR /app
 
 # Copy workspace files for dependency resolution
-COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json ./
 COPY packages/ packages/
 COPY apps/mcp-server/package.json apps/mcp-server/
 COPY apps/mcp-server/tsup.config.ts apps/mcp-server/
+COPY apps/mcp-server/tsconfig.json apps/mcp-server/
 
 # Install all dependencies (including dev for building)
 RUN pnpm install --frozen-lockfile
 
 # Copy source and build
 COPY apps/mcp-server/src/ apps/mcp-server/src/
-COPY apps/mcp-server/tsconfig.json apps/mcp-server/
 RUN pnpm --filter @apps/mcp-server build
 
 # Deploy to isolated directory with prod deps only

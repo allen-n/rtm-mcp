@@ -170,7 +170,8 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="relative my-6">
+            {/* TODO @allen-n: re-enable social login buttons when ready */}
+            {/* <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t" />
               </div>
@@ -190,10 +191,12 @@ export default function LoginPage() {
             >
               <Github className="h-4 w-4 mr-2" />
               GitHub
-            </Button>
+            </Button> */}
 
             <p className="text-center text-sm text-muted-foreground mt-6">
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              {isLogin
+                ? "Don't have an account? "
+                : "Already have an account? "}
               <button
                 type="button"
                 onClick={() => {

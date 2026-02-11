@@ -1,6 +1,6 @@
 # MCP-RTM
 
-> **Work In Progress** - Model Context Protocol server for Remember The Milk integration
+> Model Context Protocol server for Remember The Milk integration
 
 A Model Context Protocol (MCP) server that connects AI assistants (like Claude) to your Remember The Milk tasks, enabling natural language task management through any MCP-compatible client.
 
@@ -11,38 +11,36 @@ This project provides a bridge between AI assistants and Remember The Milk throu
 - Ask Claude to add tasks to your RTM lists using natural language
 - Complete tasks by describing them
 - Query your tasks with filters
-- Set priorities and manage your task list through conversation
+- Set priorities, due dates, tags, and manage your task list through conversation
 
 The server handles RTM authentication, timeline management, and exposes your task data through standardized MCP tools and resources.
 
 ## Features
 
-- 🔐 **OAuth Authentication** - Secure RTM account connection
-- 🛠️ **MCP Tools** - Natural language task operations (add, complete, set priority, query)
-- 📚 **MCP Resources** - Read-only access to lists and task data
-- 📝 **MCP Prompts** - Pre-configured task creation templates
+- 🔐 **OAuth Authentication** - Secure RTM account connection via web portal
+- 🛠️ **30+ MCP Tools** - Full RTM API coverage (tasks, lists, tags, notes, locations, settings)
+- 📚 **MCP Resources** - Read-only access to lists, tags, and location data
+- 📝 **MCP Prompts** - Pre-configured templates for common workflows
 - 🔔 **Webhook Support** - Real-time updates from RTM (optional)
-- 🔄 **Session Management** - Proper timeline handling per RTM best practices
+- 🔄 **Per-User Rate Limiting** - Automatic throttling per RTM best practices
 - 🐳 **Docker Ready** - Easy deployment to Railway or any container platform
+- ⚡ **Turbo Build System** - Fast, cached builds for monorepo development
 
 ## Prerequisites
 
 - Node.js 20+
 - pnpm 9+
+- Docker (for local development)
 - Remember The Milk account
-- [RTM API Key](https://www.rememberthemilk.com/services/api/) (free) - **See RTM API Key Setup below**
-
-## RTM API Key Setup
-
-Good news! This project uses RTM's **desktop authentication flow**, which means **no callback URL configuration is required**. Just get your API key and shared secret from RTM, and you're ready to go!
+- [RTM API Key](https://www.rememberthemilk.com/services/api/) (free)
 
 ## Quick Start
 
 ### 1. Clone and Install
 
 ```bash
-git clone https://github.com/yourusername/mcp-rtm.git
-cd mcp-rtm
+git clone https://github.com/allen-n/rtm-mcp.git
+cd rtm-mcp
 pnpm install
 ```
 
@@ -72,64 +70,63 @@ POSTGRES_DB=rtmdb
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 POSTGRES_SSL=false
-# Optional override (otherwise derived from the values above)
-# DATABASE_URL=postgres://rtm:rtm@localhost:5432/rtmdb
 ```
 
-If `DATABASE_URL` is omitted, the server builds it from the `POSTGRES_*` values (so changing `POSTGRES_PORT` automatically updates local clients), while the Docker services continue using their internal `postgres` hostname.
+### 3. Start with Docker Compose (Recommended)
 
-### 3. Start Postgres (Docker recommended)
+The easiest way to run locally is with Docker Compose, which mirrors the production setup:
 
 ```bash
+# Start all services (postgres, migrations, mcp server, web portal)
+docker compose up --build
+
+# Or start specific services
+docker compose up -d postgres    # Just the database
+docker compose up --build mcp    # MCP server + dependencies
+docker compose up --build web    # Web portal + dependencies
+```
+
+This will:
+- Start PostgreSQL on port 5432
+- Run database migrations automatically
+- Start the MCP server on `http://localhost:8787`
+- Start the web portal on `http://localhost:3000`
+
+### 4. Alternative: Native Development
+
+If you prefer running services natively (faster hot reload):
+
+```bash
+# Start just Postgres via Docker
 docker compose up -d postgres
-```
 
-> The default credentials live in `.env`. Change `POSTGRES_PORT` if you already run Postgres locally.
-
-### 4. Run Database Migration
-
-```bash
+# Run migrations
 pnpm migrate
-```
 
-### 5. Start Development Servers
+# Start all services with Turbo (parallel, cached builds)
+pnpm dev
 
-```bash
-# Terminal 1: MCP Server
-pnpm dev:mcp
-
-# Terminal 2: Web Portal (optional)
-pnpm dev:web
+# Or start individual services
+pnpm dev:mcp   # MCP server only
+pnpm dev:web   # Web portal only
 ```
 
 The MCP server runs on `http://localhost:8787`  
 The web portal runs on `http://localhost:3000`
 
-### 6. Connect Your RTM Account
+### 5. Connect Your RTM Account
 
-1. Visit `http://localhost:8787/rtm/start`
-2. Click the button to open Remember The Milk
-3. Authorize the application on RTM
-4. Return to the browser tab and click "I've Authorized - Complete Setup"
+1. Visit `http://localhost:3000` (web portal)
+2. Create an account with email/password
+3. Click "Connect RTM" to link your Remember The Milk account
+4. Authorize the application on RTM
 5. You'll see a success message when connected!
 
-### 7. Test with MCP Inspector
+### 6. Test with MCP Inspector
 
 ```bash
-npx @modelcontextprotocol/inspector node apps/mcp-server/dist/index.js
+npx @modelcontextprotocol/inspector http://localhost:8787/mcp
 ```
-
-### HTTP Clients (SSE vs JSON)
-
-The default MCP HTTP endpoint is `/mcp` and follows the Streamable HTTP spec (requires `Accept: application/json, text/event-stream` and an `initialize` request + `Mcp-Session-Id` for follow-up calls).
-
-For JSON-only clients that don't support SSE, use the compatibility endpoint:
-
-```
-POST /mcp/json
-```
-
-This endpoint accepts plain JSON requests and returns plain JSON responses.
 
 ## Project Structure
 
@@ -141,60 +138,126 @@ mcp-rtm/
 │   │   │   ├── mcp.ts       # MCP tool/resource definitions
 │   │   │   ├── http.ts      # HTTP server setup
 │   │   │   └── routes/      # Auth & webhook handlers
-│   └── web/                 # Next.js web portal (optional)
+│   │   ├── Dockerfile       # Container build
+│   │   └── railway.json     # Railway deployment config
+│   └── web/                 # Next.js web portal
+│       ├── Dockerfile
+│       └── railway.json
 ├── packages/
 │   ├── auth/                # BetterAuth configuration
 │   ├── db/                  # Kysely + migrations
-│   └── rtm-client/          # RTM API client
-└── docker-compose.yml       # Local development setup
+│   │   └── Dockerfile       # Migrations runner
+│   └── rtm-client/          # RTM API client with rate limiting
+├── docker-compose.yml       # Local development setup
+└── turbo.json               # Turbo build configuration
 ```
+
+## Authentication
+
+This project uses [BetterAuth](https://www.better-auth.com/) for authentication:
+
+- **Email/Password**: Primary authentication method. Users sign up with email and password via the web portal.
+- **Session Management**: Sessions last 7 days with automatic renewal.
+- **API Keys**: For programmatic MCP access (useful for integrating with Claude Desktop or other MCP clients).
+
+The web portal handles user registration and RTM OAuth connection. Once connected, users can use the MCP server with their API key.
+
+### OAuth Providers (Optional)
+
+Social login (GitHub, Google) is supported but disabled by default. To enable, uncomment the `socialProviders` section in `packages/auth/src/server.ts` and set the required environment variables.
 
 ## Available MCP Tools
 
 Once connected, the following tools are available to AI assistants:
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `get_tasks` | Retrieve tasks from RTM | `listId?`, `filter?` |
-| `add_task` | Create a new task | `name`, `listId?`, `parse?` |
-| `complete_task` | Mark a task complete | `listId`, `taskseriesId`, `taskId` |
-| `set_priority` | Set task priority | `listId`, `taskseriesId`, `taskId`, `priority` |
+### Task Management
 
-## Configuration
+| Tool | Description |
+|------|-------------|
+| `get_tasks` | Retrieve tasks with RTM filter syntax |
+| `add_task` | Create task (supports Smart Add: `!1 ^tomorrow #tag`) |
+| `complete_task` | Mark a task complete |
+| `uncomplete_task` | Mark a completed task as not done |
+| `delete_task` | Permanently delete a task |
+| `rename_task` | Change a task's name |
+| `move_task` | Move task between lists |
+| `postpone_task` | Push due date forward one day |
 
-### Authentication Strategy
+### Task Properties
 
-**🚧 Decision Needed:** Choose your authentication approach in `.env`:
+| Tool | Description |
+|------|-------------|
+| `set_priority` | Set priority (1=highest, 2, 3, N=none) |
+| `set_due_date` | Set/clear due date (natural language supported) |
+| `set_start_date` | Set/clear start date |
+| `set_recurrence` | Set repeat pattern (e.g., "every week") |
+| `set_estimate` | Set time estimate (e.g., "30 min") |
+| `set_url` | Attach a URL to a task |
+| `set_location` | Set task location |
 
-```bash
-# Option 1: Magic link (simpler, no passwords)
-AUTH_STRATEGY=magic_link
+### Tags
 
-# Option 2: Email/password (traditional)
-AUTH_STRATEGY=email_password
+| Tool | Description |
+|------|-------------|
+| `get_tags` | Get all tags in your account |
+| `add_tags` | Add tags to a task |
+| `remove_tags` | Remove tags from a task |
+| `set_tags` | Replace all tags on a task |
 
-# Option 3: OAuth providers (requires additional setup)
-# GITHUB_CLIENT_ID=...
-# GITHUB_CLIENT_SECRET=...
-```
+### Notes
 
-See `packages/auth/src/server.ts` to configure your chosen method.
+| Tool | Description |
+|------|-------------|
+| `add_note` | Add a note to a task |
+| `edit_note` | Edit an existing note |
+| `delete_note` | Delete a note |
 
-### Webhook Configuration (Optional)
+### Lists
 
-RTM can push real-time updates via webhooks:
+| Tool | Description |
+|------|-------------|
+| `get_lists` | Get all lists |
+| `create_list` | Create a new list (or Smart List) |
+| `rename_list` | Rename a list |
+| `archive_list` | Archive a list |
+| `delete_list` | Permanently delete a list |
 
-```bash
-# In .env
-RTM_WEBHOOK_SECRET=your_random_secret_here
+### Other
 
-# Your webhook URL (must be HTTPS in production)
-WEBHOOK_URL=https://your-domain.com/webhook/rtm
-```
+| Tool | Description |
+|------|-------------|
+| `get_locations` | Get all saved locations |
+| `get_settings` | Get user's RTM settings |
 
-**🚧 Decision Needed:** Define what happens when tasks are created/completed/tagged in `apps/mcp-server/src/routes/webhook.ts`.
+## HTTP Endpoints
+
+### MCP Protocol
+
+- `POST /mcp` - Streamable HTTP MCP endpoint (requires `Accept: application/json, text/event-stream`)
+- `POST /mcp/json` - JSON-only compatibility endpoint for clients that don't support SSE
+
+### Health & Auth
+
+- `GET /health` - Health check endpoint
+- `GET /rtm/start` - Start RTM OAuth flow
+- `GET /rtm/callback` - RTM OAuth callback
 
 ## Development
+
+### Build System
+
+This project uses [Turbo](https://turbo.build/) for fast, cached builds:
+
+```bash
+# Build everything (respects dependency order)
+pnpm build
+
+# Build specific app
+pnpm --filter @apps/mcp-server build
+
+# Run all dev servers in parallel
+pnpm dev
+```
 
 ### Running Tests
 
@@ -202,18 +265,11 @@ WEBHOOK_URL=https://your-domain.com/webhook/rtm
 # Run all tests
 pnpm test
 
+# Watch mode
+pnpm test:watch
+
 # Test specific package
 pnpm --filter @packages/rtm-client test
-```
-
-### Building
-
-```bash
-# Build all packages
-pnpm build
-
-# Build specific app
-pnpm --filter @apps/mcp-server build
 ```
 
 ### Database Migrations
@@ -226,43 +282,119 @@ pnpm migrate
 pnpm --filter @packages/db generate
 
 # Create new migration
-cd packages/db
-# Add new .ts file in src/migrations/ with format: <UTC_Timestamp>_description.ts
+# Add new .ts file in packages/db/src/migrations/ with format: <UTC_Timestamp>_description.ts
 ```
 
-## Deployment
+### Docker Compose Services
 
-### Docker Compose (Local)
+| Service | Description | Port |
+|---------|-------------|------|
+| `postgres` | PostgreSQL database | 5432 |
+| `migrations` | Runs DB migrations (exits after) | - |
+| `mcp` | MCP server | 8787 |
+| `web` | Next.js web portal | 3000 |
 
 ```bash
-docker compose up
+# Rebuild and restart a specific service
+docker compose up --build mcp
+
+# View logs
+docker compose logs -f mcp
+
+# Reset database (delete volume)
+docker compose down -v
+docker compose up -d postgres
 ```
 
-### Railway (Production)
+## Deployment (Railway)
 
-1. Install Railway CLI: `npm i -g @railway/cli`
-2. Login: `railway login`
-3. Create project: `railway init`
-4. Add services:
+This project is designed to deploy on [Railway](https://railway.app/) with three services:
+
+### Service Configuration
+
+| Service | Root Directory | Watch Patterns |
+|---------|---------------|----------------|
+| **mcp-server** | `/` | `apps/mcp-server/**`, `packages/**` |
+| **web** | `/` | `apps/web/**`, `packages/**` |
+| **postgres** | - | Railway managed PostgreSQL |
+
+Each app has a `railway.json` that configures the build and deployment.
+
+### Environment Variables
+
+#### MCP Server (`mcp-server`)
+
+| Variable | Description | Example |
+|----------|-------------|----------|
+| `RTM_API_KEY` | RTM API key | `abc123...` |
+| `RTM_SHARED_SECRET` | RTM shared secret | `xyz789...` |
+| `RTM_CALLBACK_URL` | OAuth callback URL | `https://mcp.yourdomain.com/rtm/callback` |
+| `DATABASE_URL` | PostgreSQL connection string | `${{Postgres.DATABASE_URL}}` (Railway reference) |
+| `BETTER_AUTH_SECRET` | Auth encryption secret | `openssl rand -hex 32` |
+| `BETTER_AUTH_URL` | Auth base URL (same as APP_BASE_URL) | `https://mcp.yourdomain.com` |
+| `APP_BASE_URL` | Server's public URL | `https://mcp.yourdomain.com` |
+| `WEB_APP_URL` | Web portal URL (for CORS) | `https://app.yourdomain.com` |
+| `PORT` | Server port | `8787` |
+| `LOG_LEVEL` | Logging verbosity | `info` |
+| `MCP_SERVER_NAME` | Server name in MCP protocol | `rtm-mcp-server` |
+| `MCP_SERVER_VERSION` | Server version | `1.0.0` |
+
+#### Web Portal (`web`)
+
+| Variable | Description | Example |
+|----------|-------------|----------|
+| `NEXT_PUBLIC_API_BASE` | MCP server URL | `https://mcp.yourdomain.com` |
+
+#### PostgreSQL
+
+Use Railway's managed PostgreSQL. Reference its variables in other services:
+- `${{Postgres.DATABASE_URL}}`
+
+### Deployment Steps
+
+1. **Create Railway Project**
    ```bash
-   railway add --service mcp
-   railway add --service web
+   railway login
+   railway init
    ```
-5. Set environment variables in Railway dashboard
-6. Deploy:
+
+2. **Add PostgreSQL**
+   - In Railway dashboard, click "+ New" → "Database" → "PostgreSQL"
+
+3. **Add MCP Server Service**
+   - Click "+ New" → "GitHub Repo" → Select your repo
+   - Set root directory: `/`
+   - Railway auto-detects `apps/mcp-server/railway.json`
+   - Add environment variables (see table above)
+   - Set custom domain if desired
+
+4. **Add Web Service**
+   - Click "+ New" → "GitHub Repo" → Select your repo
+   - Set root directory: `/`
+   - Railway auto-detects `apps/web/railway.json`
+   - Add environment variables
+   - Set custom domain if desired
+
+5. **Configure Watch Patterns**
+   In Railway service settings, ensure "Config as Code" is enabled so the `watchPatterns` in `railway.json` are respected.
+
+6. **Deploy**
    ```bash
    railway up
    ```
+   Or push to GitHub and Railway will auto-deploy.
 
-**Important:** The desktop flow does **not** require `RTM_CALLBACK_URL`. It can be left unset in production unless you switch to the web-based auth flow.
+### Domain Setup
 
-## Known Issues & TODOs
+Recommended domain structure:
+- MCP Server: `mcp.yourdomain.com` or `api.yourdomain.com`
+- Web Portal: `app.yourdomain.com` or `yourdomain.com`
 
-- [ ] **MCP User Context**: Currently using placeholder `userId` in MCP tools. Need to determine how to pass authenticated user context through MCP protocol.
-- [ ] **Webhook Handlers**: Event handlers are stubs. Define your business logic for task events.
-- [ ] **Error Recovery**: Add retry logic with exponential backoff for RTM 503 errors.
-- [ ] **Rate Limiting**: Current implementation is basic. Consider per-user rate limiting.
-- [ ] **Tests**: Need comprehensive test coverage for RTM client and MCP tools.
+Make sure `RTM_CALLBACK_URL`, `BETTER_AUTH_URL`, `APP_BASE_URL`, and `WEB_APP_URL` match your domain configuration.
+
+## API Rate Limits
+
+Remember The Milk allows approximately 1 request per second per user. The `rtm-client` package implements automatic per-user rate limiting with a 1100ms gap between requests (using [Bottleneck](https://www.npmjs.com/package/bottleneck)).
 
 ## Architecture Decisions
 
@@ -273,43 +405,17 @@ RTM requires "timelines" for write operations. Per RTM best practices, we:
 - Cache timelines for 24 hours
 - Refresh expired timelines automatically
 
-This differs from storing a single permanent timeline per user.
+### Per-User Rate Limiting
 
-### Database Choice
-
-PostgreSQL (via the official Docker image) is the default backing store:
-- Works well locally thanks to `docker compose up -d postgres`
-- Shared across services through a single `DATABASE_URL`
-- Still powered by type-safe queries and migrations through Kysely
-
-Need remote hosting? Point `DATABASE_URL` at your managed Postgres, set `POSTGRES_SSL=true`, and skip the local container.
+Rate limiting is implemented per-user (not globally) to ensure fair access when multiple users are active. Each user gets their own request queue.
 
 ### Monorepo Structure
 
-Using pnpm workspaces to:
+Using pnpm workspaces + Turbo to:
 - Share code between MCP server and web portal
 - Reuse auth and database packages
 - Maintain single source of truth for RTM client
-
-## API Rate Limits
-
-Remember The Milk allows approximately 1 request per second per user. The `rtm-client` package implements automatic rate limiting with 500ms between requests.
-
-For high-traffic scenarios, consider:
-- Caching list and task data
-- Batch operations where possible
-- Implementing request queuing per user
-
-## Contributing
-
-This is a work-in-progress project. Key areas needing decisions:
-
-1. **Authentication**: Choose magic link vs email/password vs OAuth
-2. **MCP Context**: Determine user identification strategy in MCP
-3. **Webhooks**: Define event handling logic for your use case
-4. **Error Handling**: Implement comprehensive retry and recovery logic
-
-See `DECISIONS.md` for detailed decision points.
+- Enable fast, cached builds
 
 ## Resources
 
@@ -317,7 +423,8 @@ See `DECISIONS.md` for detailed decision points.
 - [Remember The Milk API](https://www.rememberthemilk.com/services/api/)
 - [BetterAuth Documentation](https://www.better-auth.com/)
 - [Kysely Documentation](https://kysely.dev/)
-- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+- [Railway Documentation](https://docs.railway.com/)
+- [Turbo Documentation](https://turbo.build/)
 
 ## License
 

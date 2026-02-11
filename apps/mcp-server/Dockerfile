@@ -1,35 +1,43 @@
-#syntax=docker/dockerfile:1
+# MCP Server Dockerfile
+# Note: Railway uses RAILPACK (see railway.json). This Dockerfile is for local Docker builds.
 
-FROM node:20-alpine AS base
-RUN apk add --no-cache libc6-compat
+FROM node:20-slim AS builder
+
+# Enable corepack for pnpm
 RUN corepack enable
 
-FROM base AS build
 WORKDIR /app
 
-COPY . .
+# Copy workspace files for dependency resolution
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json ./
+COPY packages/ packages/
+COPY apps/mcp-server/package.json apps/mcp-server/
+COPY apps/mcp-server/tsup.config.ts apps/mcp-server/
+COPY apps/mcp-server/tsconfig.json apps/mcp-server/
 
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
+# Install all dependencies (including dev for building)
+RUN pnpm install --frozen-lockfile
 
-# Build all workspace packages (tsc for mcp-server)
+# Copy source and build
+COPY apps/mcp-server/src/ apps/mcp-server/src/
 RUN pnpm --filter @apps/mcp-server build
 
-# Deploy with production dependencies
-RUN pnpm --filter @apps/mcp-server --prod deploy /prod/mcp-server
+# Deploy to isolated directory with prod deps only
+RUN pnpm --filter @apps/mcp-server --prod deploy /app/deployed
 
-FROM base AS runner
+# Production image
+FROM node:20-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=8787
 
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 mcp
+# Copy deployed package (includes dist/ and prod node_modules)
+# Use --chown to ensure the node user can read the files
+COPY --from=builder --chown=node:node /app/deployed ./
 
-COPY --from=build --chown=mcp:nodejs /prod/mcp-server .
-
-USER mcp
+# Run as non-root user for security (node user is built into node:20-slim)
+USER node
 
 EXPOSE 8787
 
-CMD ["node", "dist/index.cjs"]
+CMD ["node", "dist/index.js"]

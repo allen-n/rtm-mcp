@@ -40,8 +40,4 @@ USER node
 
 EXPOSE 8787
 
-# Note: fetch() requires Node.js 18+. This image uses node:20-slim.
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "fetch('http://localhost:8787/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
-
 CMD ["node", "dist/index.js"]

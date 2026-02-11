@@ -26,19 +26,19 @@ export const metadata: Metadata = {
     "tasks integration",
     "automation",
   ],
+  // Note: og:image and twitter:image tags are automatically generated
+  // by Next.js from apps/web/app/opengraph-image.tsx
   openGraph: {
     title: "Remember The Milk MCP Server",
     description:
       "Connect Remember The Milk to Claude and other AI assistants via MCP",
     type: "website",
-    images: ["/opengraph-image.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Remember The Milk MCP Server",
     description:
       "Connect Remember The Milk to Claude and other AI assistants via MCP",
-    images: ["/opengraph-image.png"],
   },
 };
 

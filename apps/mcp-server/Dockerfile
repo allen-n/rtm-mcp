@@ -32,10 +32,15 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Copy deployed package (includes dist/ and prod node_modules)
-COPY --from=builder /app/deployed ./
+# Use --chown to ensure the node user can read the files
+COPY --from=builder --chown=node:node /app/deployed ./
+
+# Run as non-root user for security (node user is built into node:20-slim)
+USER node
 
 EXPOSE 8787
 
+# Note: fetch() requires Node.js 18+. This image uses node:20-slim.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "fetch('http://localhost:8787/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
 

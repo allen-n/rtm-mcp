@@ -31,7 +31,6 @@
     "typecheck": "tsc --noEmit"
   },
   "files": [
-    "dist",
-    "package.json"
+    "dist"
   ]
 }

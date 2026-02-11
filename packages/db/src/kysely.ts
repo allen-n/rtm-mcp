@@ -12,6 +12,13 @@ types.setTypeParser(types.builtins.TIMESTAMP, (val) => new Date(val));
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/**
+ * Locate the nearest `.env` file by walking upward from this file's directory.
+ *
+ * Stops searching when the filesystem root is reached.
+ *
+ * @returns The absolute path to the first `.env` file found, or `undefined` if none exists.
+ */
 function findEnvPath(): string | undefined {
   let dir = __dirname;
   const { root } = path.parse(dir);

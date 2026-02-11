@@ -8,6 +8,11 @@ export const size = {
 };
 export const contentType = "image/png";
 
+/**
+ * Generate the Open Graph image used for the RTM MCP Server.
+ *
+ * @returns An ImageResponse containing a 1200×630 PNG Open Graph image representing the RTM MCP Server branding and description.
+ */
 export default function Image() {
   return new ImageResponse(
     <div

@@ -42,6 +42,12 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Provides the application's root HTML layout and wraps page content with global font styles.
+ *
+ * @param children - The page or app content to render inside the document body.
+ * @returns The root `<html>` element containing the `<body>` with the Inter font class applied.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{

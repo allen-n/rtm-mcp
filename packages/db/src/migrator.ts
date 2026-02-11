@@ -2,7 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Migrator, FileMigrationProvider, sql } from "kysely";
-import { db } from "./kysely";
+import { db } from "./kysely.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,7 +41,7 @@ async function waitForDatabase(retries = 10, delayMs = 1000) {
     } catch (err) {
       if (attempt === retries) throw err;
       console.log(
-        `Database not ready (attempt ${attempt}/${retries}), retrying...`
+        `Database not ready (attempt ${attempt}/${retries}), retrying...`,
       );
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
@@ -64,7 +64,7 @@ const validCommands = [
 async function main() {
   if (!validCommands.includes(command)) {
     console.error(
-      `Got: ${command}, which is not a valid command. Valid commands are:\nlist, up, down, latest, [target_migration_name], -h, --help, help, or no command to run all migrations to latest`
+      `Got: ${command}, which is not a valid command. Valid commands are:\nlist, up, down, latest, [target_migration_name], -h, --help, help, or no command to run all migrations to latest`,
     );
     return;
   }

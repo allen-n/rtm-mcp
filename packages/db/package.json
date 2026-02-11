@@ -5,7 +5,9 @@
   "type": "module",
   "main": "src/kysely.ts",
   "scripts": {
-    "migrate": "tsx src/migrator.ts && tsx src/generate-types.ts",
+    "build": "tsc",
+    "migrate": "pnpm build && node dist/migrator.js && pnpm generate-types",
+    "migrate:prod": "node dist/migrator.js",
     "generate-types": "tsx src/generate-types.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",

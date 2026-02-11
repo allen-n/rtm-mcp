@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { config as loadEnv } from "dotenv";
 import { Kysely, PostgresDialect } from "kysely";
 import { Pool, types } from "pg";
-import type { DB } from "./schema";
+import type { DB } from "./schema.js";
 
 types.setTypeParser(types.builtins.TIMESTAMPTZ, (val) => new Date(val));
 types.setTypeParser(types.builtins.TIMESTAMP, (val) => new Date(val));
@@ -78,5 +78,5 @@ export const db = new Kysely<DB>({
   }),
 });
 
-export type { DB } from "./schema";
+export type { DB } from "./schema.js";
 export { pool };

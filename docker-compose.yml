@@ -26,7 +26,6 @@ services:
       dockerfile: packages/db/Dockerfile
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-rtm}:${POSTGRES_PASSWORD:-rtm}@postgres:5432/${POSTGRES_DB:-rtmdb}
-    command: ["pnpm", "--filter", "@packages/db", "migrate"]
     depends_on:
       - postgres
 

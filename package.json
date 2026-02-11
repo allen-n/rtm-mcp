@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "migrate": "turbo run migrate --filter=@packages/db"
+    "migrate": "turbo run migrate --filter=@packages/db",
+    "build:mcp-server": "pnpm --filter @apps/mcp-server build"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",

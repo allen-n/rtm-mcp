@@ -1,13 +1,18 @@
 {
-  "$schema": "https://railway.app/railway.schema.json",
+  "$schema": "https://railway.com/railway.schema.json",
   "build": {
-    "builder": "DOCKERFILE",
-    "dockerfilePath": "apps/mcp-server/Dockerfile"
+    "builder": "RAILPACK",
+    "watchPatterns": [
+      "apps/mcp-server/**",
+      "packages/**"
+    ],
+    "buildCommand": "pnpm build:mcp-server && pnpm --filter @apps/mcp-server --prod deploy /app/deployed"
   },
   "deploy": {
-    "numReplicas": 1,
-    "sleepApplication": false,
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
+    "restartPolicyMaxRetries": 3,
+    "startCommand": "node /app/deployed/dist/index.js"
   }
 }

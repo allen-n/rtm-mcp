@@ -1,34 +1,28 @@
 {
   "name": "@packages/db",
-  "version": "0.1.0",
+  "version": "0.0.1",
+  "private": true,
   "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./migrator": {
-      "types": "./dist/migrator.d.ts",
-      "default": "./dist/migrator.js"
-    },
-    "./kysely": {
-      "types": "./dist/kysely.d.ts",
-      "default": "./dist/kysely.js"
-    }
-  },
+  "main": "src/kysely.ts",
   "scripts": {
     "build": "tsc",
-    "generate-types": "kysely-codegen --dialect postgres --out-file src/db-types.ts",
-    "migrate": "node dist/migrator.js && pnpm generate-types",
-    "migrate:prod": "node dist/migrator.js"
+    "migrate": "pnpm build && node dist/migrator.js && pnpm generate-types",
+    "migrate:prod": "node dist/migrator.js",
+    "generate-types": "tsx src/generate-types.ts",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "dotenv": "^16.6.1",
     "kysely": "^0.27.4",
-    "pg": "^8.11.5"
+    "pg": "^8.13.1"
   },
   "devDependencies": {
-    "@types/pg": "^8.11.10",
+    "@types/node": "^22.10.5",
+    "@types/pg": "^8.15.6",
     "kysely-codegen": "^0.17.0",
-    "typescript": "catalog:"
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
   }
 }

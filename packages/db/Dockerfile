@@ -1,24 +1,31 @@
-FROM node:22-alpine
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
+FROM node:20-slim AS builder
+
+# Enable corepack for pnpm
 RUN corepack enable
 
 WORKDIR /app
 
-# Copy workspace config
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
+# Copy workspace files for dependency resolution
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json ./
+COPY packages/db/ packages/db/
 
-# Copy the db package
-COPY packages/db ./packages/db
-
-# Install dependencies
+# Install all dependencies (including dev for building)
 RUN pnpm install --frozen-lockfile
 
-# Build the migrator
+# Build
 RUN pnpm --filter @packages/db build
 
-# Run as non-root user
+# Deploy to isolated directory with prod deps only
+RUN pnpm --filter @packages/db --prod deploy /app/deployed
+
+# Production image
+FROM node:20-slim AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY --from=builder --chown=node:node /app/deployed ./
+
 USER node
 
-# Run migrations
-CMD ["node", "packages/db/dist/migrator.js"]
+CMD ["node", "dist/migrator.js"]

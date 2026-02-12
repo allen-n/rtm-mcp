@@ -103,3 +103,10 @@ export interface RtmSubscription {
   expires: string;
   filter?: string;
 }
+
+export interface WebhookEvent {
+  id: string;
+  ts: string;
+  type: string;
+  data: Record<string, unknown>;
+}

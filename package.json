@@ -10,6 +10,7 @@
     "dev:mcp": "turbo run dev --filter=@apps/mcp-server",
     "dev:web": "turbo run dev --filter=@apps/web",
     "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "turbo run lint",

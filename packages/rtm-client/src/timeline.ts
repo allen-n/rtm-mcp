@@ -60,7 +60,8 @@ export async function getOrCreateTimeline(
         .where("user_id", "=", userId)
         .execute();
 
-      throw new Error("RTM token is invalid. Please re-authorize.");
+      // Preserve typed RTM error so callers can handle by code/status.
+      throw error;
     }
 
     throw error;

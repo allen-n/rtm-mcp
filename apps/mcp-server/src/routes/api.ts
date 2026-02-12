@@ -631,10 +631,11 @@ export function apiRoutes() {
               401
             );
           }
+          if (error.isTemporary()) {
+            const retriableStatus = error.statusCode === 429 ? 429 : 503;
+            return c.json({ error: error.message }, retriableStatus);
+          }
           return c.json({ error: error.message }, 400);
-        }
-        if (error instanceof Error && error.message === "RTM token is invalid. Please re-authorize.") {
-          return c.json({ error: "RTM token is invalid. Please reconnect your account." }, 401);
         }
         authLogger.error("API invoke error", error);
         return c.json({ error: "Internal server error" }, 500);

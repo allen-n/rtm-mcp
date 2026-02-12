@@ -28,6 +28,11 @@
         "^build"
       ]
     },
+    "typecheck": {
+      "dependsOn": [
+        "^build"
+      ]
+    },
     "migrate": {
       "dependsOn": [
         "^build"

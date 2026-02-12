@@ -65,8 +65,8 @@ function invalidTokenResponse() {
 
 function handleTimelineError(error: unknown) {
   if (
-    error instanceof Error &&
-    error.message.includes("RTM token is invalid")
+    (error instanceof RtmApiError && error.isInvalidToken()) ||
+    (error instanceof Error && error.message.includes("RTM token is invalid"))
   ) {
     return invalidTokenResponse();
   }

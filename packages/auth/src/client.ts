@@ -4,11 +4,11 @@ import { createAuthClient } from "better-auth/react";
 import type { SessionUser } from "./types";
 
 // Create the auth client for React components
-// Point directly to the Hono backend server
+// Requests go to same-origin /api/auth/* and are proxied to the API server
+// via Next.js rewrites (see apps/web/next.config.mjs)
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8787",
   fetchOptions: {
-    credentials: "include", // Ensure cookies are sent with cross-origin requests
+    credentials: "include",
   },
   plugins: [apiKeyClient()],
 });

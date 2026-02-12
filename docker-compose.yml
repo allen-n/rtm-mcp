@@ -59,8 +59,10 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         NEXT_PUBLIC_API_BASE: http://localhost:8787
+        API_BASE_INTERNAL: http://mcp:8787
     environment:
       NEXT_PUBLIC_API_BASE: http://localhost:8787
+      API_BASE_INTERNAL: http://mcp:8787
     ports:
       - "3000:3000"
     depends_on:

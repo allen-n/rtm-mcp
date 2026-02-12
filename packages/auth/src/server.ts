@@ -83,11 +83,12 @@ export const auth = betterAuth({
     process.env.WEB_APP_URL || "",
   ].filter(Boolean),
 
-  // Advanced cookie configuration for cross-origin support
+  // Cookie configuration
+  // Auth requests are proxied through Next.js (same-origin), so lax is sufficient
   advanced: {
     defaultCookieAttributes: {
-      sameSite: "none", // Required for cross-origin cookies between localhost:3000 and localhost:8787
-      secure: true, // Required with sameSite=none (browsers allow secure cookies on localhost)
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
       httpOnly: true, // Prevent XSS attacks
     },
   },

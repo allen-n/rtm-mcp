@@ -37,6 +37,10 @@ COPY . .
 ARG NEXT_PUBLIC_API_BASE
 ENV NEXT_PUBLIC_API_BASE=$NEXT_PUBLIC_API_BASE
 
+# Server-side URL for proxying auth requests (e.g. Docker service name, Railway private URL)
+ARG API_BASE_INTERNAL
+ENV API_BASE_INTERNAL=$API_BASE_INTERNAL
+
 # Build the app
 RUN pnpm --filter @apps/web build
 

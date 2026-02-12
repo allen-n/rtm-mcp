@@ -67,10 +67,11 @@ RTM_WEBHOOK_SECRET=$(openssl rand -hex 32)
 POSTGRES_USER=rtm
 POSTGRES_PASSWORD=rtm
 POSTGRES_DB=rtmdb
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
+POSTGRES_PORT=5433
 POSTGRES_SSL=false
 ```
+
+The remaining defaults in `.env.example` (`NEXT_PUBLIC_API_BASE`, `APP_BASE_URL`, etc.) are already set for local development. When running with Docker Compose, `API_BASE_INTERNAL` is set automatically in `docker-compose.yml`.
 
 ### 3. Start with Docker Compose (Recommended)
 
@@ -87,6 +88,7 @@ docker compose up --build web    # Web portal + dependencies
 ```
 
 This will:
+
 - Start PostgreSQL on port 5432
 - Run database migrations automatically
 - Start the MCP server on `http://localhost:8787`
@@ -172,62 +174,62 @@ Once connected, the following tools are available to AI assistants:
 
 ### Task Management
 
-| Tool | Description |
-|------|-------------|
-| `get_tasks` | Retrieve tasks with RTM filter syntax |
-| `add_task` | Create task (supports Smart Add: `!1 ^tomorrow #tag`) |
-| `complete_task` | Mark a task complete |
-| `uncomplete_task` | Mark a completed task as not done |
-| `delete_task` | Permanently delete a task |
-| `rename_task` | Change a task's name |
-| `move_task` | Move task between lists |
-| `postpone_task` | Push due date forward one day |
+| Tool              | Description                                           |
+| ----------------- | ----------------------------------------------------- |
+| `get_tasks`       | Retrieve tasks with RTM filter syntax                 |
+| `add_task`        | Create task (supports Smart Add: `!1 ^tomorrow #tag`) |
+| `complete_task`   | Mark a task complete                                  |
+| `uncomplete_task` | Mark a completed task as not done                     |
+| `delete_task`     | Permanently delete a task                             |
+| `rename_task`     | Change a task's name                                  |
+| `move_task`       | Move task between lists                               |
+| `postpone_task`   | Push due date forward one day                         |
 
 ### Task Properties
 
-| Tool | Description |
-|------|-------------|
-| `set_priority` | Set priority (1=highest, 2, 3, N=none) |
-| `set_due_date` | Set/clear due date (natural language supported) |
-| `set_start_date` | Set/clear start date |
-| `set_recurrence` | Set repeat pattern (e.g., "every week") |
-| `set_estimate` | Set time estimate (e.g., "30 min") |
-| `set_url` | Attach a URL to a task |
-| `set_location` | Set task location |
+| Tool             | Description                                     |
+| ---------------- | ----------------------------------------------- |
+| `set_priority`   | Set priority (1=highest, 2, 3, N=none)          |
+| `set_due_date`   | Set/clear due date (natural language supported) |
+| `set_start_date` | Set/clear start date                            |
+| `set_recurrence` | Set repeat pattern (e.g., "every week")         |
+| `set_estimate`   | Set time estimate (e.g., "30 min")              |
+| `set_url`        | Attach a URL to a task                          |
+| `set_location`   | Set task location                               |
 
 ### Tags
 
-| Tool | Description |
-|------|-------------|
-| `get_tags` | Get all tags in your account |
-| `add_tags` | Add tags to a task |
-| `remove_tags` | Remove tags from a task |
-| `set_tags` | Replace all tags on a task |
+| Tool          | Description                  |
+| ------------- | ---------------------------- |
+| `get_tags`    | Get all tags in your account |
+| `add_tags`    | Add tags to a task           |
+| `remove_tags` | Remove tags from a task      |
+| `set_tags`    | Replace all tags on a task   |
 
 ### Notes
 
-| Tool | Description |
-|------|-------------|
-| `add_note` | Add a note to a task |
-| `edit_note` | Edit an existing note |
-| `delete_note` | Delete a note |
+| Tool          | Description           |
+| ------------- | --------------------- |
+| `add_note`    | Add a note to a task  |
+| `edit_note`   | Edit an existing note |
+| `delete_note` | Delete a note         |
 
 ### Lists
 
-| Tool | Description |
-|------|-------------|
-| `get_lists` | Get all lists |
-| `create_list` | Create a new list (or Smart List) |
-| `rename_list` | Rename a list |
-| `archive_list` | Archive a list |
-| `delete_list` | Permanently delete a list |
+| Tool           | Description                       |
+| -------------- | --------------------------------- |
+| `get_lists`    | Get all lists                     |
+| `create_list`  | Create a new list (or Smart List) |
+| `rename_list`  | Rename a list                     |
+| `archive_list` | Archive a list                    |
+| `delete_list`  | Permanently delete a list         |
 
 ### Other
 
-| Tool | Description |
-|------|-------------|
+| Tool            | Description             |
+| --------------- | ----------------------- |
 | `get_locations` | Get all saved locations |
-| `get_settings` | Get user's RTM settings |
+| `get_settings`  | Get user's RTM settings |
 
 ## HTTP Endpoints
 
@@ -287,12 +289,12 @@ pnpm --filter @packages/db generate
 
 ### Docker Compose Services
 
-| Service | Description | Port |
-|---------|-------------|------|
-| `postgres` | PostgreSQL database | 5432 |
-| `migrations` | Runs DB migrations (exits after) | - |
-| `mcp` | MCP server | 8787 |
-| `web` | Next.js web portal | 3000 |
+| Service      | Description                      | Port |
+| ------------ | -------------------------------- | ---- |
+| `postgres`   | PostgreSQL database              | 5432 |
+| `migrations` | Runs DB migrations (exits after) | -    |
+| `mcp`        | MCP server                       | 8787 |
+| `web`        | Next.js web portal               | 3000 |
 
 ```bash
 # Rebuild and restart a specific service
@@ -312,11 +314,11 @@ This project is designed to deploy on [Railway](https://railway.app/) with three
 
 ### Service Configuration
 
-| Service | Root Directory | Watch Patterns |
-|---------|---------------|----------------|
-| **mcp-server** | `/` | `apps/mcp-server/**`, `packages/**` |
-| **web** | `/` | `apps/web/**`, `packages/**` |
-| **postgres** | - | Railway managed PostgreSQL |
+| Service        | Root Directory | Watch Patterns                      |
+| -------------- | -------------- | ----------------------------------- |
+| **mcp-server** | `/`            | `apps/mcp-server/**`, `packages/**` |
+| **web**        | `/`            | `apps/web/**`, `packages/**`        |
+| **postgres**   | -              | Railway managed PostgreSQL          |
 
 Each app has a `railway.json` that configures the build and deployment.
 
@@ -324,35 +326,46 @@ Each app has a `railway.json` that configures the build and deployment.
 
 #### MCP Server (`mcp-server`)
 
-| Variable | Description | Example |
-|----------|-------------|----------|
-| `RTM_API_KEY` | RTM API key | `abc123...` |
-| `RTM_SHARED_SECRET` | RTM shared secret | `xyz789...` |
-| `RTM_CALLBACK_URL` | OAuth callback URL | `https://mcp.yourdomain.com/rtm/callback` |
-| `DATABASE_URL` | PostgreSQL connection string | `${{Postgres.DATABASE_URL}}` (Railway reference) |
-| `BETTER_AUTH_SECRET` | Auth encryption secret | `openssl rand -hex 32` |
-| `BETTER_AUTH_URL` | Auth base URL (same as APP_BASE_URL) | `https://mcp.yourdomain.com` |
-| `APP_BASE_URL` | Server's public URL | `https://mcp.yourdomain.com` |
-| `WEB_APP_URL` | Web portal URL (for CORS) | `https://app.yourdomain.com` |
-| `PORT` | Server port | `8787` |
-| `LOG_LEVEL` | Logging verbosity | `info` |
-| `MCP_SERVER_NAME` | Server name in MCP protocol | `rtm-mcp-server` |
-| `MCP_SERVER_VERSION` | Server version | `1.0.0` |
+| Variable             | Description                                 | Dev default                               | Production example                        |
+| -------------------- | ------------------------------------------- | ----------------------------------------- | ----------------------------------------- |
+| `RTM_API_KEY`        | RTM API key                                 | —                                         | `abc123...`                               |
+| `RTM_SHARED_SECRET`  | RTM shared secret                           | —                                         | `xyz789...`                               |
+| `RTM_CALLBACK_URL`   | RTM OAuth callback URL                      | `http://localhost:8787/rtm/callback`      | `https://api.yourdomain.com/rtm/callback` |
+| `RTM_WEBHOOK_SECRET` | Random secret for webhook HMAC verification | —                                         | `openssl rand -hex 32`                    |
+| `DATABASE_URL`       | PostgreSQL connection string                | `postgres://rtm:rtm@localhost:5433/rtmdb` | `${{Postgres.DATABASE_URL}}`              |
+| `BETTER_AUTH_SECRET` | Auth encryption secret                      | —                                         | `openssl rand -hex 32`                    |
+| `BETTER_AUTH_URL`    | Auth base URL (same as `APP_BASE_URL`)      | `http://localhost:8787`                   | `https://api.yourdomain.com`              |
+| `APP_BASE_URL`       | Server's public URL                         | `http://localhost:8787`                   | `https://api.yourdomain.com`              |
+| `WEB_APP_URL`        | Web portal URL (for CORS)                   | `http://localhost:3000`                   | `https://yourdomain.com`                  |
+| `PORT`               | Server port                                 | `8787`                                    | `8787`                                    |
+| `NODE_ENV`           | Environment                                 | `development`                             | `production`                              |
+| `LOG_LEVEL`          | Logging verbosity                           | `info`                                    | `info`                                    |
+| `MCP_SERVER_NAME`    | Server name in MCP protocol                 | `rtm-mcp-server`                          | `rtm-mcp-server`                          |
+| `MCP_SERVER_VERSION` | Server version                              | `1.0.0`                                   | `1.0.0`                                   |
+| `MCP_TRANSPORT`      | Transport mode                              | `http`                                    | `http`                                    |
 
 #### Web Portal (`web`)
 
-| Variable | Description | Example |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_API_BASE` | MCP server URL | `https://mcp.yourdomain.com` |
+| Variable               | Description                                                                                                                       | Dev default                                       | Production example                        |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | ----------------------------------------- |
+| `NEXT_PUBLIC_API_BASE` | MCP server public URL (inlined into client JS at build time)                                                                      | `http://localhost:8787`                           | `https://api.yourdomain.com`              |
+| `NEXT_PUBLIC_SITE_URL` | Web portal public URL (used for metadata)                                                                                         | `http://localhost:3000`                           | `https://yourdomain.com`                  |
+| `API_BASE_INTERNAL`    | Server-side URL for proxying auth requests to the MCP server. Use the container/private networking URL so traffic stays internal. | Not needed (falls back to `NEXT_PUBLIC_API_BASE`) | `http://mcp-server.railway.internal:8787` |
+
+> **Important:** `NEXT_PUBLIC_*` variables are inlined into the client-side JavaScript bundle at **build time**.
+> `API_BASE_INTERNAL` is also baked in at build time (Next.js evaluates `rewrites()` during `next build`).
+> In the Dockerfile, both are declared as `ARG`s so Docker (and Railway) can inject them during the build.
 
 #### PostgreSQL
 
 Use Railway's managed PostgreSQL. Reference its variables in other services:
+
 - `${{Postgres.DATABASE_URL}}`
 
 ### Deployment Steps
 
 1. **Create Railway Project**
+
    ```bash
    railway login
    railway init
@@ -387,10 +400,11 @@ Use Railway's managed PostgreSQL. Reference its variables in other services:
 ### Domain Setup
 
 Recommended domain structure:
+
 - MCP Server: `mcp.yourdomain.com` or `api.yourdomain.com`
 - Web Portal: `app.yourdomain.com` or `yourdomain.com`
 
-Make sure `RTM_CALLBACK_URL`, `BETTER_AUTH_URL`, `APP_BASE_URL`, and `WEB_APP_URL` match your domain configuration.
+Make sure `RTM_CALLBACK_URL`, `BETTER_AUTH_URL`, `APP_BASE_URL`, `WEB_APP_URL`, `NEXT_PUBLIC_API_BASE`, and `API_BASE_INTERNAL` match your domain configuration.
 
 ## API Rate Limits
 
@@ -401,6 +415,7 @@ Remember The Milk allows approximately 1 request per second per user. The `rtm-c
 ### Timeline Management
 
 RTM requires "timelines" for write operations. Per RTM best practices, we:
+
 - Create a new timeline per user session
 - Cache timelines for 24 hours
 - Refresh expired timelines automatically
@@ -412,6 +427,7 @@ Rate limiting is implemented per-user (not globally) to ensure fair access when 
 ### Monorepo Structure
 
 Using pnpm workspaces + Turbo to:
+
 - Share code between MCP server and web portal
 - Reuse auth and database packages
 - Maintain single source of truth for RTM client

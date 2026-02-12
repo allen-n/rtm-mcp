@@ -1,10 +1,12 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { db } from "@db/kysely";
 import { auth } from "@auth/server";
 import { getRtmClient, RtmApiError } from "@rtm-client/client";
 import { getOrCreateTimeline } from "@rtm-client/timeline";
 import { swaggerUI } from "@hono/swagger-ui";
 import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { authLogger } from "../logger.js";
 import { getStaticDoc } from "../static-docs.js";
 import { buildApiOpenApiSpec } from "./openapi-spec.js";
@@ -266,7 +268,7 @@ async function getUserRtmToken(userId: string) {
 
 // Custom API error class
 class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(public status: ContentfulStatusCode, message: string) {
     super(message);
     this.name = "ApiError";
   }
@@ -489,7 +491,9 @@ const toolHandlers: Record<ToolName, (userId: string, input: any) => Promise<any
 };
 
 // Auth middleware for API routes
-async function authenticateRequest(c: any): Promise<string | null> {
+type ApiContext = Context<{ Variables: { user: { id: string } | null } }>;
+
+async function authenticateRequest(c: ApiContext): Promise<string | null> {
   // Try API key authentication first
   const apiKeyHeader = c.req.header("x-api-key");
   if (apiKeyHeader) {
@@ -516,7 +520,7 @@ async function authenticateRequest(c: any): Promise<string | null> {
 }
 
 export function apiRoutes() {
-  const api = new Hono();
+  const api = new Hono<{ Variables: { user: { id: string } | null } }>();
   const invokeSchema = z.object({
     tool: z.string(),
     input: z.record(z.any()).optional().default({}),
@@ -527,7 +531,7 @@ export function apiRoutes() {
     const tools = Object.entries(toolSchemas).map(([name, schema]) => ({
       name,
       description: schema.description,
-      parameters: schema.input._def,
+      parameters: zodToJsonSchema(schema.input, `${name}Input`),
     }));
 
     return c.json({
@@ -538,10 +542,23 @@ export function apiRoutes() {
 
   // GET /api/v1/skills.md - Detailed usage guide for AI agents
   api.get("/skills.md", async (c) => {
-    const skillsDoc = await getStaticDoc("skills.md");
-    return c.text(skillsDoc, 200, {
-      "Content-Type": "text/markdown; charset=utf-8",
-    });
+    try {
+      const skillsDoc = await getStaticDoc("skills.md");
+      return c.text(skillsDoc, 200, {
+        "Content-Type": "text/markdown; charset=utf-8",
+      });
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
+        return c.text("skills.md not found", 404);
+      }
+      authLogger.error("Failed to read skills.md", error);
+      return c.text("Failed to load skills documentation", 500);
+    }
   });
 
   // GET /api/v1/openapi.json - OpenAPI spec for REST endpoints
@@ -616,7 +633,10 @@ export function apiRoutes() {
           }
           return c.json({ error: error.message }, 400);
         }
-        console.error("API error:", error);
+        if (error instanceof Error && error.message === "RTM token is invalid. Please re-authorize.") {
+          return c.json({ error: "RTM token is invalid. Please reconnect your account." }, 401);
+        }
+        authLogger.error("API invoke error", error);
         return c.json({ error: "Internal server error" }, 500);
       }
     }

@@ -2,6 +2,11 @@
 
 This guide provides practical patterns for AI agents using the RTM API.
 
+## Base URL Rule
+
+Use the same root domain/origin that the LLM is currently browsing.
+Prefer origin-relative paths (for example, `/api/v1/invoke`) and do not hardcode a different domain.
+
 ## Authentication
 
 All requests require:

@@ -268,6 +268,7 @@ Once connected, the following tools are available to AI assistants:
 - `POST /api/v1/invoke` - Invoke a tool by name
 - `GET /api/v1/skills.md` - Detailed usage guide for AI agents
 - `GET /llms.txt` - Quick MCP usage guide
+- `GET /` with `Accept: text/markdown` (or `text/md`) - Returns `llms.txt` on the web domain
 - `GET /api/v1/openapi.json` - OpenAPI spec for the REST API
 - `GET /api/v1/docs` - Interactive Swagger UI
 

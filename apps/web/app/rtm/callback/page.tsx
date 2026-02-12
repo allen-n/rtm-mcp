@@ -24,9 +24,7 @@ export default function RtmCallbackPage() {
   useEffect(() => {
     async function completeAuth() {
       try {
-        const apiBase =
-          process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8787";
-        const res = await fetch(`${apiBase}/rtm/complete`, {
+        const res = await fetch("/rtm/complete", {
           credentials: "include",
         });
 

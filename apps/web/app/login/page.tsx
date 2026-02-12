@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { authClient } from "@auth/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +23,7 @@ export default function LoginPage() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,6 +40,8 @@ export default function LoginPage() {
 
         if (result.error) {
           setError(result.error.message || "Login failed");
+        } else {
+          router.push("/dashboard");
         }
       } else {
         const result = await authClient.signUp.email({
@@ -49,6 +53,10 @@ export default function LoginPage() {
 
         if (result.error) {
           setError(result.error.message || "Sign up failed");
+        }
+        // Redirect to dashboard using Next.js navigation if not handled by callback
+        else if (result.data.user) {
+          router.push("/dashboard");
         }
       }
     } catch (err) {

@@ -33,8 +33,6 @@ import {
   Clock,
 } from "lucide-react";
 
-const apiBase = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8787";
-
 export function ApiKeySection() {
   const [apiKeys, setApiKeys] = useState<Apikey[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +50,7 @@ export function ApiKeySection() {
 
   async function loadApiKeys() {
     try {
-      const res = await fetch(`${apiBase}/api/auth/api-key/list`, {
+      const res = await fetch("/api/auth/api-key/list", {
         credentials: "include",
       });
       if (res.ok) {
@@ -71,7 +69,7 @@ export function ApiKeySection() {
 
     setCreating(true);
     try {
-      const res = await fetch(`${apiBase}/api/auth/api-key/create`, {
+      const res = await fetch("/api/auth/api-key/create", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

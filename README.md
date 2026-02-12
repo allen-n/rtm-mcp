@@ -324,37 +324,45 @@ Each app has a `railway.json` that configures the build and deployment.
 
 ### Environment Variables
 
+#### How env vars work in this project
+
+The web portal uses Next.js, which has two categories of environment variables:
+
+- **`NEXT_PUBLIC_*` vars** are inlined into the client-side JavaScript bundle at **build time**. They must be present when `next build` runs. In the Dockerfile, they are declared as `ARG`s so Railway (and Docker) can inject them during the build.
+- **`API_BASE_INTERNAL`** is also evaluated at build time (Next.js `rewrites()` runs during `next build`). It is declared as a Dockerfile `ARG` for the same reason.
+- The MCP server is a plain Node.js/Hono process that reads all env vars at **runtime**. No special build-time injection needed.
+
 #### MCP Server (`mcp-server`)
 
-| Variable             | Description                                 | Dev default                               | Production example                        |
-| -------------------- | ------------------------------------------- | ----------------------------------------- | ----------------------------------------- |
-| `RTM_API_KEY`        | RTM API key                                 | —                                         | `abc123...`                               |
-| `RTM_SHARED_SECRET`  | RTM shared secret                           | —                                         | `xyz789...`                               |
-| `RTM_CALLBACK_URL`   | RTM OAuth callback URL                      | `http://localhost:8787/rtm/callback`      | `https://api.yourdomain.com/rtm/callback` |
-| `RTM_WEBHOOK_SECRET` | Random secret for webhook HMAC verification | —                                         | `openssl rand -hex 32`                    |
-| `DATABASE_URL`       | PostgreSQL connection string                | `postgres://rtm:rtm@localhost:5433/rtmdb` | `${{Postgres.DATABASE_URL}}`              |
-| `BETTER_AUTH_SECRET` | Auth encryption secret                      | —                                         | `openssl rand -hex 32`                    |
-| `BETTER_AUTH_URL`    | Auth base URL (same as `APP_BASE_URL`)      | `http://localhost:8787`                   | `https://api.yourdomain.com`              |
-| `APP_BASE_URL`       | Server's public URL                         | `http://localhost:8787`                   | `https://api.yourdomain.com`              |
-| `WEB_APP_URL`        | Web portal URL (for CORS)                   | `http://localhost:3000`                   | `https://yourdomain.com`                  |
-| `PORT`               | Server port                                 | `8787`                                    | `8787`                                    |
-| `NODE_ENV`           | Environment                                 | `development`                             | `production`                              |
-| `LOG_LEVEL`          | Logging verbosity                           | `info`                                    | `info`                                    |
-| `MCP_SERVER_NAME`    | Server name in MCP protocol                 | `rtm-mcp-server`                          | `rtm-mcp-server`                          |
-| `MCP_SERVER_VERSION` | Server version                              | `1.0.0`                                   | `1.0.0`                                   |
-| `MCP_TRANSPORT`      | Transport mode                              | `http`                                    | `http`                                    |
+| Variable             | Description                                                                                                                                                 | Dev default                               | Production example                        |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------- |
+| `RTM_API_KEY`        | RTM API key                                                                                                                                                 | —                                         | `abc123...`                               |
+| `RTM_SHARED_SECRET`  | RTM shared secret                                                                                                                                           | —                                         | `xyz789...`                               |
+| `RTM_CALLBACK_URL`   | RTM OAuth callback URL                                                                                                                                      | `http://localhost:8787/rtm/callback`      | `https://api.yourdomain.com/rtm/callback` |
+| `RTM_WEBHOOK_SECRET` | Random secret for webhook HMAC verification                                                                                                                 | —                                         | `openssl rand -hex 32`                    |
+| `DATABASE_URL`       | PostgreSQL connection string                                                                                                                                | `postgres://rtm:rtm@localhost:5433/rtmdb` | `${{Postgres.DATABASE_URL}}`              |
+| `BETTER_AUTH_SECRET` | Auth encryption secret                                                                                                                                      | —                                         | `openssl rand -hex 32`                    |
+| `BETTER_AUTH_URL`    | Auth base URL (same as `APP_BASE_URL`)                                                                                                                      | `http://localhost:8787`                   | `https://api.yourdomain.com`              |
+| `APP_BASE_URL`       | Server's public URL                                                                                                                                         | `http://localhost:8787`                   | `https://api.yourdomain.com`              |
+| `WEB_APP_URL`        | Web portal URL — used by BetterAuth `trustedOrigins` and Hono CORS. **Must match the exact origin the browser sends** (scheme + domain, no trailing slash). | `http://localhost:3000`                   | `https://yourdomain.com`                  |
+| `PORT`               | Server port. **Railway sets this automatically** — do not override it in Railway.                                                                           | `8787`                                    | _(set by Railway)_                        |
+| `NODE_ENV`           | Environment                                                                                                                                                 | `development`                             | `production`                              |
+| `LOG_LEVEL`          | Logging verbosity                                                                                                                                           | `info`                                    | `info`                                    |
+| `MCP_SERVER_NAME`    | Server name in MCP protocol                                                                                                                                 | `rtm-mcp-server`                          | `rtm-mcp-server`                          |
+| `MCP_SERVER_VERSION` | Server version                                                                                                                                              | `1.0.0`                                   | `1.0.0`                                   |
+| `MCP_TRANSPORT`      | Transport mode                                                                                                                                              | `http`                                    | `http`                                    |
 
 #### Web Portal (`web`)
 
-| Variable               | Description                                                                                                                       | Dev default                                       | Production example                        |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | ----------------------------------------- |
-| `NEXT_PUBLIC_API_BASE` | MCP server public URL (inlined into client JS at build time)                                                                      | `http://localhost:8787`                           | `https://api.yourdomain.com`              |
-| `NEXT_PUBLIC_SITE_URL` | Web portal public URL (used for metadata)                                                                                         | `http://localhost:3000`                           | `https://yourdomain.com`                  |
-| `API_BASE_INTERNAL`    | Server-side URL for proxying auth requests to the MCP server. Use the container/private networking URL so traffic stays internal. | Not needed (falls back to `NEXT_PUBLIC_API_BASE`) | `http://mcp-server.railway.internal:8787` |
+Auth requests from the browser go to the same origin (`/api/auth/*`) and are proxied by Next.js to the MCP server via `rewrites()` in `next.config.mjs`. This avoids CORS issues entirely.
 
-> **Important:** `NEXT_PUBLIC_*` variables are inlined into the client-side JavaScript bundle at **build time**.
-> `API_BASE_INTERNAL` is also baked in at build time (Next.js evaluates `rewrites()` during `next build`).
-> In the Dockerfile, both are declared as `ARG`s so Docker (and Railway) can inject them during the build.
+| Variable               | Description                                                                                                                                                                                                                             | Dev default                                               | Production example                         |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------ |
+| `NEXT_PUBLIC_API_BASE` | MCP server **public** URL. Inlined into client JS at **build time** (Dockerfile `ARG`). Also used as the fallback proxy destination if `API_BASE_INTERNAL` is not set.                                                                  | `http://localhost:8787`                                   | `https://api.yourdomain.com`               |
+| `NEXT_PUBLIC_SITE_URL` | Web portal public URL (used for metadata)                                                                                                                                                                                               | `http://localhost:3000`                                   | `https://yourdomain.com`                   |
+| `API_BASE_INTERNAL`    | MCP server **internal/private** URL used by the Next.js server to proxy auth requests. Evaluated at **build time** (Dockerfile `ARG`). Use the container hostname (Docker) or Railway private networking URL so traffic stays internal. | Not needed locally (falls back to `NEXT_PUBLIC_API_BASE`) | `http://<service>.railway.internal:<port>` |
+
+> **Gotcha — `API_BASE_INTERNAL` must use `http://`, not `https://`.** Railway private networking does not use TLS. The port must match what Railway assigns (check the mcp service deploy logs for the actual port, e.g. `8080`).
 
 #### PostgreSQL
 
@@ -378,15 +386,17 @@ Use Railway's managed PostgreSQL. Reference its variables in other services:
    - Click "+ New" → "GitHub Repo" → Select your repo
    - Set root directory: `/`
    - Railway auto-detects `apps/mcp-server/railway.json`
-   - Add environment variables (see table above)
-   - Set custom domain if desired
+   - Add all MCP Server environment variables (see table above)
+   - **Do not set `PORT`** — Railway assigns it automatically
+   - Set custom domain (e.g. `api.yourdomain.com`)
 
 4. **Add Web Service**
    - Click "+ New" → "GitHub Repo" → Select your repo
    - Set root directory: `/`
    - Railway auto-detects `apps/web/railway.json`
-   - Add environment variables
-   - Set custom domain if desired
+   - Add all Web Portal environment variables (see table above)
+   - For `API_BASE_INTERNAL`, use the MCP server's **private networking** URL. Find it in the mcp service Settings → Networking → Private. The format is `http://<name>.railway.internal:<port>`. The port is whatever Railway assigned to the mcp service (check its deploy logs — typically `8080` unless overridden).
+   - Set custom domain (e.g. `yourdomain.com`)
 
 5. **Configure Watch Patterns**
    In Railway service settings, ensure "Config as Code" is enabled so the `watchPatterns` in `railway.json` are respected.
@@ -401,10 +411,29 @@ Use Railway's managed PostgreSQL. Reference its variables in other services:
 
 Recommended domain structure:
 
-- MCP Server: `mcp.yourdomain.com` or `api.yourdomain.com`
-- Web Portal: `app.yourdomain.com` or `yourdomain.com`
+- MCP Server: `api.yourdomain.com`
+- Web Portal: `yourdomain.com`
 
-Make sure `RTM_CALLBACK_URL`, `BETTER_AUTH_URL`, `APP_BASE_URL`, `WEB_APP_URL`, `NEXT_PUBLIC_API_BASE`, and `API_BASE_INTERNAL` match your domain configuration.
+After setting domains, make sure these variables are consistent:
+
+| Variable                                | Must match                                      |
+| --------------------------------------- | ----------------------------------------------- |
+| `RTM_CALLBACK_URL`                      | `https://api.yourdomain.com/rtm/callback`       |
+| `BETTER_AUTH_URL`                       | `https://api.yourdomain.com`                    |
+| `APP_BASE_URL`                          | `https://api.yourdomain.com`                    |
+| `WEB_APP_URL` (on mcp service)          | `https://yourdomain.com` (exact browser origin) |
+| `NEXT_PUBLIC_API_BASE` (on web service) | `https://api.yourdomain.com`                    |
+| `API_BASE_INTERNAL` (on web service)    | `http://<name>.railway.internal:<port>`         |
+
+### Troubleshooting
+
+| Symptom                                               | Likely cause                                                                                                                                                                                              |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth requests hit `localhost:8787` in production      | `NEXT_PUBLIC_API_BASE` was not set at **build time**. Redeploy the web service — Railway passes service vars as Docker build args automatically since the Dockerfile declares `ARG NEXT_PUBLIC_API_BASE`. |
+| CORS errors on auth endpoints                         | The web app is making cross-origin requests directly to the API. Auth should be proxied through Next.js rewrites (same-origin). Check that `packages/auth/src/client.ts` has no `baseURL` set.            |
+| `ECONNREFUSED` from Next.js proxy                     | `API_BASE_INTERNAL` is wrong. Verify: (1) uses `http://` not `https://`, (2) port matches what Railway assigned (check mcp deploy logs), (3) private networking is enabled on the mcp service.            |
+| `403 Forbidden` / "Invalid origin" on sign-up/sign-in | `WEB_APP_URL` on the mcp service doesn't match the browser's origin. Must be the exact scheme + domain (e.g. `https://yourdomain.com`, no trailing slash).                                                |
+| `502 Bad Gateway` on `api.yourdomain.com`             | The mcp service's `PORT` env var conflicts with what Railway assigned. **Remove any `PORT` override** from the mcp service in Railway and let Railway set it automatically.                               |
 
 ## API Rate Limits
 

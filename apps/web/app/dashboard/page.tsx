@@ -26,7 +26,9 @@ import {
   ListTodo,
 } from "lucide-react";
 
-const apiBase = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8787";
+// Public API URL shown to the user (MCP server URL, Claude config, etc.)
+const publicApiBase =
+  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8787";
 
 type RtmStatus = "loading" | "connected" | "disconnected" | "error";
 
@@ -38,7 +40,9 @@ interface RtmConnection {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(
+    null,
+  );
   const [rtmConnection, setRtmConnection] = useState<RtmConnection>({
     status: "loading",
   });
@@ -60,7 +64,7 @@ export default function DashboardPage() {
 
       // Check RTM connection status
       try {
-        const res = await fetch(`${apiBase}/rtm/status`, {
+        const res = await fetch("/rtm/status", {
           credentials: "include",
         });
         if (res.ok) {
@@ -93,7 +97,7 @@ export default function DashboardPage() {
   async function handleConnectRtm() {
     setConnecting(true);
     try {
-      window.location.href = `${apiBase}/rtm/start`;
+      window.location.href = "/rtm/start";
     } catch (error) {
       setConnecting(false);
     }
@@ -101,7 +105,7 @@ export default function DashboardPage() {
 
   async function handleDisconnectRtm() {
     try {
-      const res = await fetch(`${apiBase}/rtm/disconnect`, {
+      const res = await fetch("/rtm/disconnect", {
         method: "POST",
         credentials: "include",
       });
@@ -114,7 +118,7 @@ export default function DashboardPage() {
   }
 
   function copyServerUrl() {
-    navigator.clipboard.writeText(`${apiBase}/mcp/json`);
+    navigator.clipboard.writeText(`${publicApiBase}/mcp/json`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -133,9 +137,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome back, {user.name}
-          </p>
+          <p className="text-muted-foreground">Welcome back, {user.name}</p>
         </div>
         <Button variant="outline" onClick={handleLogout}>
           <LogOut className="h-4 w-4 mr-2" />
@@ -240,7 +242,7 @@ export default function DashboardPage() {
             <label className="text-sm font-medium mb-2 block">Server URL</label>
             <div className="flex gap-2">
               <code className="flex-1 px-3 py-2 bg-muted rounded-md text-sm font-mono">
-                {apiBase}/mcp/json
+                {publicApiBase}/mcp/json
               </code>
               <Button variant="outline" size="icon" onClick={copyServerUrl}>
                 {copied ? (
@@ -255,10 +257,10 @@ export default function DashboardPage() {
           <div className="bg-muted p-4 rounded-lg">
             <p className="text-sm font-medium mb-2">Claude Desktop Config</p>
             <pre className="text-xs overflow-x-auto">
-{`{
+              {`{
   "mcpServers": {
     "rtm": {
-      "url": "${apiBase}/mcp/json",
+      "url": "${publicApiBase}/mcp/json",
       "headers": {
         "x-api-key": "YOUR_API_KEY"
       }

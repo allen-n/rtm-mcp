@@ -20,6 +20,7 @@ RUN pnpm install --frozen-lockfile
 
 # Copy source and build
 COPY apps/mcp-server/src/ apps/mcp-server/src/
+COPY apps/mcp-server/docs/ apps/mcp-server/docs/
 RUN pnpm --filter @apps/mcp-server build
 
 # Deploy to isolated directory with prod deps only

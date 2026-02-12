@@ -4,272 +4,8 @@ import { auth } from "@auth/server";
 import { getRtmClient, RtmApiError } from "@rtm-client/client";
 import { getOrCreateTimeline } from "@rtm-client/timeline";
 import { z } from "zod";
-import { zValidator } from "@hono/zod-validator";
 import { authLogger } from "../logger.js";
-
-const SKILLS_MD = `# RTM API Skills
-
-This document provides detailed instructions for AI agents to effectively use the Remember The Milk (RTM) REST API.
-
-## Authentication
-
-All requests require the \`x-api-key\` header:
-
-\`\`\`
-x-api-key: your-api-key-here
-\`\`\`
-
-## API Pattern
-
-All tool calls use the same endpoint:
-
-\`\`\`
-POST /api/v1/invoke
-Content-Type: application/json
-
-{
-  "tool": "tool_name",
-  "input": { ... parameters ... }
-}
-\`\`\`
-
-Response format:
-\`\`\`json
-{
-  "success": true,
-  "result": { ... tool-specific result ... }
-}
-\`\`\`
-
-Error format:
-\`\`\`json
-{
-  "error": "Error message"
-}
-\`\`\`
-
-## Task Management Workflow
-
-### 1. Getting Tasks
-
-To retrieve tasks, use \`get_tasks\` with optional filters:
-
-\`\`\`json
-{
-  "tool": "get_tasks",
-  "input": {
-    "filter": "status:incomplete AND due:today"
-  }
-}
-\`\`\`
-
-Common filter patterns:
-- \`due:today\` - Tasks due today
-- \`dueBefore:today\` - Overdue tasks
-- \`dueWithin:"7 days"\` - Due within a week
-- \`priority:1\` - High priority tasks
-- \`list:Inbox\` - Tasks in specific list
-- \`tag:work\` - Tasks with specific tag
-- \`status:incomplete\` - Incomplete tasks only
-
-The response includes task data with these key fields:
-- \`id\` - List ID (use as \`listId\`)
-- \`taskseries[].id\` - Task series ID (use as \`taskseriesId\`)
-- \`taskseries[].task[].id\` - Task ID (use as \`taskId\`)
-
-### 2. Creating Tasks
-
-Use Smart Add syntax for quick task creation:
-
-\`\`\`json
-{
-  "tool": "add_task",
-  "input": {
-    "name": "Review quarterly report ^friday !1 #work =2h"
-  }
-}
-\`\`\`
-
-Smart Add patterns:
-- \`^date\` - Due date: \`^tomorrow\`, \`^next monday\`, \`^dec 25\`
-- \`!n\` - Priority: \`!1\` (high), \`!2\` (medium), \`!3\` (low)
-- \`#tag\` - Tags: \`#work\`, \`#personal\`
-- \`@location\` - Location: \`@Office\`, \`@Home\`
-- \`=time\` - Estimate: \`=30min\`, \`=2h\`
-
-To add to a specific list:
-\`\`\`json
-{
-  "tool": "add_task",
-  "input": {
-    "name": "New task",
-    "listId": "12345678"
-  }
-}
-\`\`\`
-
-### 3. Modifying Tasks
-
-Task modifications require three IDs from the task data:
-- \`listId\` - The list containing the task
-- \`taskseriesId\` - The task series ID
-- \`taskId\` - The specific task instance ID
-
-**Complete a task:**
-\`\`\`json
-{
-  "tool": "complete_task",
-  "input": {
-    "listId": "12345678",
-    "taskseriesId": "87654321",
-    "taskId": "11111111"
-  }
-}
-\`\`\`
-
-**Set priority:**
-\`\`\`json
-{
-  "tool": "set_priority",
-  "input": {
-    "listId": "12345678",
-    "taskseriesId": "87654321",
-    "taskId": "11111111",
-    "priority": "1"
-  }
-}
-\`\`\`
-Priority values: \`"1"\` (highest), \`"2"\` (high), \`"3"\` (normal), \`"N"\` (none)
-
-**Set due date:**
-\`\`\`json
-{
-  "tool": "set_due_date",
-  "input": {
-    "listId": "12345678",
-    "taskseriesId": "87654321",
-    "taskId": "11111111",
-    "due": "tomorrow at 3pm",
-    "hasDueTime": true
-  }
-}
-\`\`\`
-Omit \`due\` to clear the due date.
-
-**Add tags:**
-\`\`\`json
-{
-  "tool": "add_tags",
-  "input": {
-    "listId": "12345678",
-    "taskseriesId": "87654321",
-    "taskId": "11111111",
-    "tags": "urgent,followup"
-  }
-}
-\`\`\`
-
-### 4. Notes
-
-Add detailed notes to tasks:
-
-\`\`\`json
-{
-  "tool": "add_note",
-  "input": {
-    "listId": "12345678",
-    "taskseriesId": "87654321",
-    "taskId": "11111111",
-    "title": "Meeting Notes",
-    "text": "Discussed project timeline. Next steps: review budget."
-  }
-}
-\`\`\`
-
-## List Management
-
-### Get all lists:
-\`\`\`json
-{
-  "tool": "get_lists",
-  "input": {}
-}
-\`\`\`
-
-### Create a new list:
-\`\`\`json
-{
-  "tool": "create_list",
-  "input": {
-    "name": "Project Alpha"
-  }
-}
-\`\`\`
-
-### Create a Smart List (auto-filters tasks):
-\`\`\`json
-{
-  "tool": "create_list",
-  "input": {
-    "name": "High Priority Work",
-    "filter": "priority:1 AND tag:work"
-  }
-}
-\`\`\`
-
-### Move task to different list:
-\`\`\`json
-{
-  "tool": "move_task",
-  "input": {
-    "fromListId": "12345678",
-    "toListId": "87654321",
-    "taskseriesId": "11111111",
-    "taskId": "22222222"
-  }
-}
-\`\`\`
-
-## Common Workflows
-
-### Daily Review
-1. Get overdue tasks: \`get_tasks\` with filter \`dueBefore:today\`
-2. Get today's tasks: \`get_tasks\` with filter \`due:today\`
-3. Review and update priorities as needed
-
-### Weekly Planning
-1. Get tasks due this week: \`get_tasks\` with filter \`dueWithin:"7 days"\`
-2. Get high priority incomplete tasks: \`get_tasks\` with filter \`priority:1 AND status:incomplete\`
-3. Create tasks for the week using \`add_task\`
-
-### Task Triage
-1. Get Inbox tasks: \`get_tasks\` with filter \`list:Inbox\`
-2. For each task, either:
-   - Move to appropriate list with \`move_task\`
-   - Add tags with \`add_tags\`
-   - Set due date with \`set_due_date\`
-   - Set priority with \`set_priority\`
-
-## Error Handling
-
-Common errors:
-- \`401 Unauthorized\` - Invalid or missing API key
-- \`401 RTM token invalid\` - User needs to reconnect RTM account
-- \`400 Invalid input\` - Check parameter names and types
-- \`400 Unknown tool\` - Check tool name spelling
-
-## Rate Limits
-
-The API enforces per-user rate limiting of ~1 request per 1.1 seconds to comply with RTM API guidelines. Batch your requests thoughtfully.
-
-## Tips for AI Agents
-
-1. **Always get lists first** before creating tasks - you'll need list IDs
-2. **Store task IDs** after retrieval - you need listId, taskseriesId, and taskId for modifications
-3. **Use Smart Add** for task creation - it's faster than setting properties individually
-4. **Use filters effectively** - they're powerful and reduce data transfer
-5. **Handle errors gracefully** - especially 401 errors which indicate auth issues
-`;
+import { getStaticDoc } from "../static-docs.js";
 
 // Tool schemas for documentation
 export const toolSchemas = {
@@ -775,6 +511,10 @@ async function authenticateRequest(c: any): Promise<string | null> {
 
 export function apiRoutes() {
   const api = new Hono();
+  const invokeSchema = z.object({
+    tool: z.string(),
+    input: z.record(z.any()).optional().default({}),
+  });
 
   // GET /api/v1/tools - List all available tools with schemas
   api.get("/tools", (c) => {
@@ -791,8 +531,9 @@ export function apiRoutes() {
   });
 
   // GET /api/v1/skills.md - Detailed usage guide for AI agents
-  api.get("/skills.md", (c) => {
-    return c.text(SKILLS_MD, 200, {
+  api.get("/skills.md", async (c) => {
+    const skillsDoc = await getStaticDoc("skills.md");
+    return c.text(skillsDoc, 200, {
       "Content-Type": "text/markdown; charset=utf-8",
     });
   });
@@ -800,20 +541,25 @@ export function apiRoutes() {
   // POST /api/v1/invoke - Call any tool by name
   api.post(
     "/invoke",
-    zValidator(
-      "json",
-      z.object({
-        tool: z.string(),
-        input: z.record(z.any()).optional().default({}),
-      })
-    ),
     async (c) => {
+      const jsonBody = await c.req.json().catch(() => null);
+      const invokeParse = invokeSchema.safeParse(jsonBody);
+      if (!invokeParse.success) {
+        return c.json(
+          {
+            error: "Invalid input",
+            details: invokeParse.error.issues,
+          },
+          400
+        );
+      }
+
       const userId = await authenticateRequest(c);
       if (!userId) {
         return c.json({ error: "Unauthorized. Provide x-api-key header or valid session." }, 401);
       }
 
-      const { tool, input } = c.req.valid("json");
+      const { tool, input } = invokeParse.data;
 
       if (!(tool in toolHandlers)) {
         return c.json(

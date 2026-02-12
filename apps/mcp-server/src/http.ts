@@ -12,6 +12,7 @@ import { authRoutes } from "./routes/auth.js";
 import { webhookRoutes } from "./routes/webhook.js";
 import { apiRoutes } from "./routes/api.js";
 import { RelaxedStreamableHTTPTransport } from "./relaxed-http.js";
+import { getStaticDoc } from "./static-docs.js";
 
 type SessionResult = NonNullable<Session>;
 
@@ -210,109 +211,9 @@ app.all("/mcp", (c) => handleMcpRequest(c, { relaxed: false }));
 app.all("/mcp/json", (c) => handleMcpRequest(c, { relaxed: true }));
 
 // llms.txt - AI-friendly overview
-app.get("/llms.txt", (c) => {
-  return c.text(`# RTM MCP Server
-
-> Remember The Milk API for AI agents
-
-## Overview
-
-This service provides a REST API and MCP (Model Context Protocol) server for managing tasks in Remember The Milk (RTM). It enables AI agents to create, read, update, and delete tasks, lists, tags, notes, and more.
-
-## Authentication
-
-All API requests require authentication via \`x-api-key\` header. Get your API key from the web app at /settings after connecting your RTM account.
-
-## API Endpoints
-
-- \`GET /api/v1/tools\` - List all available tools with schemas
-- \`POST /api/v1/invoke\` - Call any tool by name
-- \`GET /api/v1/skills.md\` - Detailed usage guide for AI agents
-- \`GET /health\` - Health check
-
-## Quick Start
-
-\`\`\`bash
-# List your tasks
-curl -X POST https://your-domain.com/api/v1/invoke \\
-  -H "Content-Type: application/json" \\
-  -H "x-api-key: your-api-key" \\
-  -d '{"tool": "get_tasks", "input": {"filter": "due:today"}}'
-
-# Add a task with Smart Add syntax
-curl -X POST https://your-domain.com/api/v1/invoke \\
-  -H "Content-Type: application/json" \\
-  -H "x-api-key: your-api-key" \\
-  -d '{"tool": "add_task", "input": {"name": "Buy groceries ^tomorrow !1 #shopping"}}'
-\`\`\`
-
-## Available Tools
-
-### Tasks
-- get_tasks - Retrieve tasks with optional filters
-- add_task - Create new task (supports Smart Add)
-- complete_task - Mark task complete
-- uncomplete_task - Mark task incomplete
-- delete_task - Delete task permanently
-- set_priority - Set priority (1/2/3/N)
-- set_due_date - Set/clear due date
-- set_start_date - Set/clear start date
-- rename_task - Change task name
-- set_recurrence - Set repeat pattern
-- set_estimate - Set time estimate
-- set_url - Attach URL
-- postpone_task - Postpone by one day
-- move_task - Move to different list
-
-### Tags
-- get_tags - List all tags
-- add_tags - Add tags to task
-- remove_tags - Remove tags from task
-- set_tags - Replace all tags
-
-### Notes
-- add_note - Add note to task
-- edit_note - Edit existing note
-- delete_note - Delete note
-
-### Lists
-- get_lists - List all lists
-- create_list - Create new list
-- rename_list - Rename list
-- archive_list - Archive list
-- delete_list - Delete list
-
-### Locations
-- get_locations - List saved locations
-- set_location - Set task location
-
-### Settings
-- get_settings - Get user settings
-
-## RTM Filter Syntax
-
-- \`due:today\` - Due today
-- \`dueBefore:today\` - Overdue
-- \`dueWithin:"7 days"\` - Due within 7 days
-- \`priority:1\` - High priority
-- \`list:Inbox\` - In specific list
-- \`tag:work\` - Has tag
-- \`status:incomplete\` - Not completed
-
-## Smart Add Syntax
-
-- \`^date\` - Due date (e.g., \`^tomorrow\`)
-- \`!priority\` - Priority (e.g., \`!1\`)
-- \`#tag\` - Add tag (e.g., \`#work\`)
-- \`@location\` - Set location
-- \`=estimate\` - Time estimate (e.g., \`=30min\`)
-
-## Documentation
-
-- Full skills guide: GET /api/v1/skills.md
-- Tool schemas: GET /api/v1/tools
-- MCP protocol: POST /mcp (for MCP-compatible clients)
-`);
+app.get("/llms.txt", async (c) => {
+  const llms = await getStaticDoc("llms.txt");
+  return c.text(llms);
 });
 
 // Health check

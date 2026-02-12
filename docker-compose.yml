@@ -57,6 +57,8 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE: http://localhost:8787
     environment:
       NEXT_PUBLIC_API_BASE: http://localhost:8787
     ports:

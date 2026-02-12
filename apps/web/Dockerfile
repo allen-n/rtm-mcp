@@ -33,6 +33,10 @@ COPY --from=deps /app/packages ./packages
 # Copy source
 COPY . .
 
+# Accept NEXT_PUBLIC_* vars as build args so they are inlined into the client bundle
+ARG NEXT_PUBLIC_API_BASE
+ENV NEXT_PUBLIC_API_BASE=$NEXT_PUBLIC_API_BASE
+
 # Build the app
 RUN pnpm --filter @apps/web build
 

@@ -47,7 +47,75 @@ export default function DashboardPage() {
     status: "loading",
   });
   const [copied, setCopied] = useState(false);
+  const [copiedConfig, setCopiedConfig] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const mcpUrl = `${publicApiBase}/mcp/json`;
+  const llmsUrl = `${publicApiBase}/llms.txt`;
+  const toolsUrl = `${publicApiBase}/api/v1/tools`;
+  const skillsUrl = `${publicApiBase}/api/v1/skills.md`;
+
+  const clientConfigs = [
+    {
+      id: "claude-desktop",
+      title: "Claude Desktop",
+      hint: "Use in Claude Desktop MCP settings (JSON)",
+      config: `{
+  "mcpServers": {
+    "rtm": {
+      "url": "${mcpUrl}",
+      "headers": {
+        "x-api-key": "YOUR_API_KEY"
+      }
+    }
+  }
+}`,
+    },
+    {
+      id: "cursor",
+      title: "Cursor",
+      hint: "Save as .cursor/mcp.json",
+      config: `{
+  "mcpServers": {
+    "rtm": {
+      "url": "${mcpUrl}",
+      "headers": {
+        "x-api-key": "YOUR_API_KEY"
+      }
+    }
+  }
+}`,
+    },
+    {
+      id: "cline-roo-windsurf",
+      title: "Cline / Roo Code / Windsurf",
+      hint: "Use in MCP JSON config for your extension/client",
+      config: `{
+  "mcpServers": {
+    "rtm": {
+      "url": "${mcpUrl}",
+      "headers": {
+        "x-api-key": "YOUR_API_KEY"
+      }
+    }
+  }
+}`,
+    },
+    {
+      id: "continue",
+      title: "Continue",
+      hint: "Add this MCP server entry in Continue config",
+      config: `{
+  "mcpServers": {
+    "rtm": {
+      "url": "${mcpUrl}",
+      "headers": {
+        "x-api-key": "YOUR_API_KEY"
+      }
+    }
+  }
+}`,
+    },
+  ] as const;
 
   useEffect(() => {
     async function loadData() {
@@ -118,9 +186,15 @@ export default function DashboardPage() {
   }
 
   function copyServerUrl() {
-    navigator.clipboard.writeText(`${publicApiBase}/mcp/json`);
+    navigator.clipboard.writeText(mcpUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  function copyConfig(configId: string, config: string) {
+    navigator.clipboard.writeText(config);
+    setCopiedConfig(configId);
+    setTimeout(() => setCopiedConfig(null), 2000);
   }
 
   if (!user) {
@@ -233,16 +307,16 @@ export default function DashboardPage() {
         <CardHeader>
           <CardTitle>MCP Server Configuration</CardTitle>
           <CardDescription>
-            Use these settings to connect your MCP client (Claude Desktop,
-            Cursor, etc.)
+            Use these settings to connect your MCP client and review available
+            API/MCP docs.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div>
             <label className="text-sm font-medium mb-2 block">Server URL</label>
             <div className="flex gap-2">
               <code className="flex-1 px-3 py-2 bg-muted rounded-md text-sm font-mono">
-                {publicApiBase}/mcp/json
+                {mcpUrl}
               </code>
               <Button variant="outline" size="icon" onClick={copyServerUrl}>
                 {copied ? (
@@ -254,20 +328,70 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-muted p-4 rounded-lg">
-            <p className="text-sm font-medium mb-2">Claude Desktop Config</p>
-            <pre className="text-xs overflow-x-auto">
-              {`{
-  "mcpServers": {
-    "rtm": {
-      "url": "${publicApiBase}/mcp/json",
-      "headers": {
-        "x-api-key": "YOUR_API_KEY"
-      }
-    }
-  }
-}`}
-            </pre>
+          <div className="space-y-3">
+            <p className="text-sm font-medium">Client Setup Snippets</p>
+            <div className="grid gap-3 md:grid-cols-2">
+              {clientConfigs.map((client) => (
+                <div key={client.id} className="bg-muted p-4 rounded-lg">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <p className="text-sm font-semibold">{client.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {client.hint}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyConfig(client.id, client.config)}
+                    >
+                      {copiedConfig === client.id ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <pre className="text-xs overflow-x-auto">{client.config}</pre>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border p-4">
+            <p className="text-sm font-medium mb-3">Docs & API Reference</p>
+            <div className="grid gap-2 text-sm">
+              <a
+                href={llmsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 underline-offset-4 hover:underline"
+              >
+                <ExternalLink className="h-4 w-4" />
+                llms.txt (quick MCP usage guide)
+              </a>
+              <a
+                href={skillsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 underline-offset-4 hover:underline"
+              >
+                <ExternalLink className="h-4 w-4" />
+                skills.md (detailed AI agent usage)
+              </a>
+              <a
+                href={toolsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 underline-offset-4 hover:underline"
+              >
+                <ExternalLink className="h-4 w-4" />
+                /api/v1/tools (JSON tool schemas)
+              </a>
+              <p className="text-xs text-muted-foreground pt-1">
+                API invoke endpoint: <code>{`${publicApiBase}/api/v1/invoke`}</code>
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

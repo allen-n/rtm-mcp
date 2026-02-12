@@ -6,13 +6,14 @@
   "dependencies": {
     "@hono/mcp": "^0.1.5",
     "@hono/node-server": "^1.13.7",
+    "@hono/swagger-ui": "^0.5.2",
     "@modelcontextprotocol/sdk": "^1.0.4",
     "@packages/auth": "workspace:*",
     "@packages/db": "workspace:*",
     "@packages/rtm-client": "workspace:*",
     "hono": "^4.6.14",
-    "zod": "^3.24.1",
-    "pg": "^8.13.1"
+    "pg": "^8.13.1",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",

@@ -3,9 +3,11 @@ import { db } from "@db/kysely";
 import { auth } from "@auth/server";
 import { getRtmClient, RtmApiError } from "@rtm-client/client";
 import { getOrCreateTimeline } from "@rtm-client/timeline";
+import { swaggerUI } from "@hono/swagger-ui";
 import { z } from "zod";
 import { authLogger } from "../logger.js";
 import { getStaticDoc } from "../static-docs.js";
+import { buildApiOpenApiSpec } from "./openapi-spec.js";
 
 // Tool schemas for documentation
 export const toolSchemas = {
@@ -241,6 +243,10 @@ export const toolSchemas = {
 } as const;
 
 type ToolName = keyof typeof toolSchemas;
+const openApiSpec = buildApiOpenApiSpec(toolSchemas, {
+  title: "RTM MCP REST API",
+  version: "1.0.0",
+});
 
 // Helper to get user's RTM token
 async function getUserRtmToken(userId: string) {
@@ -537,6 +543,14 @@ export function apiRoutes() {
       "Content-Type": "text/markdown; charset=utf-8",
     });
   });
+
+  // GET /api/v1/openapi.json - OpenAPI spec for REST endpoints
+  api.get("/openapi.json", (c) => {
+    return c.json(openApiSpec);
+  });
+
+  // GET /api/v1/docs - Interactive Swagger UI
+  api.get("/docs", swaggerUI({ url: "/api/v1/openapi.json" }));
 
   // POST /api/v1/invoke - Call any tool by name
   api.post(

@@ -1,0 +1,38 @@
+# RTM MCP Server
+
+> Remember The Milk API for AI agents
+
+## Overview
+
+This service provides a REST API and MCP (Model Context Protocol) server for managing tasks in Remember The Milk (RTM).
+
+## Authentication
+
+All API requests require the `x-api-key` header. Create an API key in the web app settings after connecting your RTM account.
+
+## Base URL Rule
+
+Always call endpoints on the same root domain/origin that the LLM is currently visiting.
+Use origin-relative paths (for example, `/api/v1/invoke`) rather than hardcoded domains.
+
+## API Endpoints
+
+- `GET /api/v1/tools` - List all available tools with schemas
+- `POST /api/v1/invoke` - Invoke a tool by name
+- `GET /api/v1/skills.md` - Detailed usage guide for AI agents
+- `GET /health` - Health check
+
+## Quick Start
+
+```bash
+curl -X POST "${ORIGIN}/api/v1/invoke" \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: your-api-key" \
+  -d '{"tool":"get_tasks","input":{"filter":"due:today"}}'
+```
+
+## Documentation
+
+- Full skills guide: `GET /api/v1/skills.md`
+- Tool schemas: `GET /api/v1/tools`
+- MCP endpoint: `POST /mcp`

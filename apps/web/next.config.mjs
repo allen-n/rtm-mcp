@@ -24,8 +24,16 @@ const nextConfig = {
         destination: `${apiBase}/api/auth/:path*`,
       },
       {
+        source: "/api/v1/:path*",
+        destination: `${apiBase}/api/v1/:path*`,
+      },
+      {
         source: "/rtm/:path*",
         destination: `${apiBase}/rtm/:path*`,
+      },
+      {
+        source: "/llms.txt",
+        destination: `${apiBase}/llms.txt`,
       },
     ];
   },

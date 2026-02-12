@@ -47,7 +47,24 @@ export default function DashboardPage() {
     status: "loading",
   });
   const [copied, setCopied] = useState(false);
+  const [copiedConfig, setCopiedConfig] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const mcpUrl = `${publicApiBase}/mcp/json`;
+  const llmsUrl = `${publicApiBase}/llms.txt`;
+  const toolsUrl = `${publicApiBase}/api/v1/tools`;
+  const skillsUrl = `${publicApiBase}/api/v1/skills.md`;
+  const docsUrl = `${publicApiBase}/api/v1/docs`;
+  const openApiUrl = `${publicApiBase}/api/v1/openapi.json`;
+  const sharedConfig = `{
+  "mcpServers": {
+    "rtm": {
+      "url": "${mcpUrl}",
+      "headers": {
+        "x-api-key": "YOUR_API_KEY"
+      }
+    }
+  }
+}`;
 
   useEffect(() => {
     async function loadData() {
@@ -118,9 +135,15 @@ export default function DashboardPage() {
   }
 
   function copyServerUrl() {
-    navigator.clipboard.writeText(`${publicApiBase}/mcp/json`);
+    navigator.clipboard.writeText(mcpUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  function copyConfig(config: string) {
+    navigator.clipboard.writeText(config);
+    setCopiedConfig(true);
+    setTimeout(() => setCopiedConfig(false), 2000);
   }
 
   if (!user) {
@@ -233,16 +256,16 @@ export default function DashboardPage() {
         <CardHeader>
           <CardTitle>MCP Server Configuration</CardTitle>
           <CardDescription>
-            Use these settings to connect your MCP client (Claude Desktop,
-            Cursor, etc.)
+            Use these settings to connect your MCP client and review available
+            API/MCP docs.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div>
             <label className="text-sm font-medium mb-2 block">Server URL</label>
             <div className="flex gap-2">
               <code className="flex-1 px-3 py-2 bg-muted rounded-md text-sm font-mono">
-                {publicApiBase}/mcp/json
+                {mcpUrl}
               </code>
               <Button variant="outline" size="icon" onClick={copyServerUrl}>
                 {copied ? (
@@ -254,20 +277,91 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-muted p-4 rounded-lg">
-            <p className="text-sm font-medium mb-2">Claude Desktop Config</p>
-            <pre className="text-xs overflow-x-auto">
-              {`{
-  "mcpServers": {
-    "rtm": {
-      "url": "${publicApiBase}/mcp/json",
-      "headers": {
-        "x-api-key": "YOUR_API_KEY"
-      }
-    }
-  }
-}`}
-            </pre>
+          <div className="space-y-3">
+            <p className="text-sm font-medium">
+              Client Setup (Claude Desktop / Cursor / Cline / Roo Code /
+              Windsurf / Continue)
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <p className="text-sm font-semibold">Shared JSON Config</p>
+                    <p className="text-xs text-muted-foreground">
+                      Use this for most MCP clients that accept JSON server
+                      definitions.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyConfig(sharedConfig)}
+                  >
+                    {copiedConfig ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <pre className="text-xs overflow-x-auto">{sharedConfig}</pre>
+              </div>
+
+              <div className="rounded-lg border p-4">
+                <p className="text-sm font-semibold mb-3">Docs & API Reference</p>
+                <div className="grid gap-2 text-sm">
+                  <a
+                    href={docsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 underline-offset-4 hover:underline"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Swagger UI ({`${publicApiBase}/api/v1/docs`})
+                  </a>
+                  <a
+                    href={openApiUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 underline-offset-4 hover:underline"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    OpenAPI JSON ({`${publicApiBase}/api/v1/openapi.json`})
+                  </a>
+                  <a
+                    href={llmsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 underline-offset-4 hover:underline"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    llms.txt (quick MCP usage guide)
+                  </a>
+                  <a
+                    href={skillsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 underline-offset-4 hover:underline"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    skills.md (detailed AI agent usage)
+                  </a>
+                  <a
+                    href={toolsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 underline-offset-4 hover:underline"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    /api/v1/tools (JSON tool schemas)
+                  </a>
+                  <p className="text-xs text-muted-foreground pt-1">
+                    API invoke endpoint:{" "}
+                    <code>{`${publicApiBase}/api/v1/invoke`}</code>
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

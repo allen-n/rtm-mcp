@@ -124,7 +124,31 @@ The web portal runs on `http://localhost:3000`
 4. Authorize the application on RTM
 5. You'll see a success message when connected!
 
-### 6. Test with MCP Inspector
+### 6. Configure Your MCP Client (Shared JSON)
+
+After connecting RTM and creating an API key in the dashboard settings, use this config for major MCP clients:
+
+- Claude Desktop
+- Cursor
+- Cline / Roo Code / Windsurf
+- Continue
+
+```json
+{
+  "mcpServers": {
+    "rtm": {
+      "url": "http://localhost:8787/mcp/json",
+      "headers": {
+        "x-api-key": "YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+In production, replace `http://localhost:8787` with your deployed API base (for example `https://api.yourdomain.com`).
+
+### 7. Test with MCP Inspector
 
 ```bash
 npx @modelcontextprotocol/inspector http://localhost:8787/mcp
@@ -237,6 +261,16 @@ Once connected, the following tools are available to AI assistants:
 
 - `POST /mcp` - Streamable HTTP MCP endpoint (requires `Accept: application/json, text/event-stream`)
 - `POST /mcp/json` - JSON-only compatibility endpoint for clients that don't support SSE
+
+### REST API & Docs
+
+- `GET /api/v1/tools` - List all tools with schemas
+- `POST /api/v1/invoke` - Invoke a tool by name
+- `GET /api/v1/skills.md` - Detailed usage guide for AI agents
+- `GET /llms.txt` - Quick MCP usage guide
+- `GET /` with `Accept: text/markdown` (or `text/md`) - Returns `llms.txt` on the web domain
+- `GET /api/v1/openapi.json` - OpenAPI spec for the REST API
+- `GET /api/v1/docs` - Interactive Swagger UI
 
 ### Health & Auth
 

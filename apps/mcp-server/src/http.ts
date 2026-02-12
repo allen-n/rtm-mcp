@@ -10,7 +10,9 @@ import { authLogger, httpLogger, mcpLogger } from "./logger.js";
 import { createMcpServer, mcpServer, withTransportUserContext } from "./mcp.js";
 import { authRoutes } from "./routes/auth.js";
 import { webhookRoutes } from "./routes/webhook.js";
+import { apiRoutes } from "./routes/api.js";
 import { RelaxedStreamableHTTPTransport } from "./relaxed-http.js";
+import { getStaticDoc } from "./static-docs.js";
 
 type SessionResult = NonNullable<Session>;
 
@@ -92,6 +94,7 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 // Mount routes
 app.route("/rtm", authRoutes());
 app.route("/webhook", webhookRoutes());
+app.route("/api/v1", apiRoutes());
 
 async function handleMcpRequest(
   c: Context,
@@ -206,6 +209,12 @@ async function handleMcpRequest(
 
 app.all("/mcp", (c) => handleMcpRequest(c, { relaxed: false }));
 app.all("/mcp/json", (c) => handleMcpRequest(c, { relaxed: true }));
+
+// llms.txt - AI-friendly overview
+app.get("/llms.txt", async (c) => {
+  const llms = await getStaticDoc("llms.txt");
+  return c.text(llms);
+});
 
 // Health check
 app.get("/health", (c) => {

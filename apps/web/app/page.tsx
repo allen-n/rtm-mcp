@@ -21,6 +21,11 @@ import {
 } from "lucide-react";
 
 export default function Home() {
+  const llmsUrl = "/llms.txt";
+  const skillsUrl = "/api/v1/skills.md";
+  const openApiUrl = "/api/v1/openapi.json";
+  const docsUrl = "/api/v1/docs";
+
   return (
     <div className="container mx-auto px-4 py-16">
       {/* Hero Section */}
@@ -192,6 +197,46 @@ export default function Home() {
               <Button className="w-full">Get Started Now</Button>
             </Link>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* LLM Guidance */}
+      <Card className="max-w-2xl mx-auto mt-6">
+        <CardHeader>
+          <CardTitle>For LLM Agents</CardTitle>
+          <CardDescription>
+            This homepage supports LLM discovery. For markdown-first clients,
+            request <code className="font-mono">/</code> with{" "}
+            <code className="font-mono">Accept: text/markdown</code> (or{" "}
+            <code className="font-mono">text/md</code>) to receive{" "}
+            <code className="font-mono">/llms.txt</code>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <p>
+            Primary guide:{" "}
+            <a href={llmsUrl} className="text-primary hover:underline">
+              {llmsUrl}
+            </a>
+          </p>
+          <p>
+            Detailed usage guide:{" "}
+            <a href={skillsUrl} className="text-primary hover:underline">
+              {skillsUrl}
+            </a>
+          </p>
+          <p>
+            OpenAPI spec:{" "}
+            <a href={openApiUrl} className="text-primary hover:underline">
+              {openApiUrl}
+            </a>
+          </p>
+          <p>
+            Interactive API docs:{" "}
+            <a href={docsUrl} className="text-primary hover:underline">
+              {docsUrl}
+            </a>
+          </p>
         </CardContent>
       </Card>
 

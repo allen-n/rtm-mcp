@@ -116,7 +116,7 @@ export default function RtmCallbackPage() {
               <Button variant="destructive" onClick={handleGoHome}>
                 Return to dashboard
               </Button>
-              <Button variant="outline" onClick={handleGoHome}>
+              <Button variant="outline" onClick={() => router.push("/rtm/start")}>
                 Try again
               </Button>
             </div>

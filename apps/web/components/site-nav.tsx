@@ -28,10 +28,17 @@ export function SiteNav() {
     let mounted = true;
 
     async function loadSession() {
-      const session = await authClient.getSession();
-      if (!mounted) return;
-      setUser(session.data?.user ?? null);
-      setLoading(false);
+      try {
+        const session = await authClient.getSession();
+        if (!mounted) return;
+        setUser(session.data?.user ?? null);
+      } catch (error) {
+        if (!mounted) return;
+        setUser(null);
+      } finally {
+        if (!mounted) return;
+        setLoading(false);
+      }
     }
 
     loadSession();
@@ -49,7 +56,7 @@ export function SiteNav() {
             milkbridge
           </Link>
           <nav className="flex items-center gap-4 text-muted-foreground">
-            <Link href="/docs/getting-started" className={navClass("/docs/getting-started")}>
+            <Link href="/docs/getting-started" className={navClass("/docs")}>
               Docs
             </Link>
             <Link href="/playbooks" className={navClass("/playbooks")}>

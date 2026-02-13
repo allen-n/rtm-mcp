@@ -160,17 +160,32 @@ export default function Home() {
             </CardHeader>
             <CardContent className="text-sm space-y-1">
               <p>
-                <a href={docsUrl} className="text-primary hover:underline">
+                <a
+                  href={docsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary hover:underline"
+                >
                   Interactive docs
                 </a>
               </p>
               <p>
-                <a href={openApiUrl} className="text-primary hover:underline">
+                <a
+                  href={openApiUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary hover:underline"
+                >
                   OpenAPI
                 </a>
               </p>
               <p>
-                <a href={skillsUrl} className="text-primary hover:underline">
+                <a
+                  href={skillsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary hover:underline"
+                >
                   Skills guide
                 </a>
               </p>

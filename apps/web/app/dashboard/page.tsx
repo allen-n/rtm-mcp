@@ -136,7 +136,10 @@ export default function DashboardPage() {
         setRtmConnection({ status: "disconnected" });
         setShowFullDisconnectNotice(true);
       } else {
-        setDisconnectError("Failed to disconnect in milkbridge.");
+        const body = await res.json().catch(() => null);
+        setDisconnectError(
+          body?.error || `Failed to disconnect in milkbridge (${res.status}).`,
+        );
       }
     } catch (error) {
       console.error("Failed to disconnect RTM:", error);
@@ -291,29 +294,31 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>How to fully disconnect</CardTitle>
-          <CardDescription>
-            Disconnecting in milkbridge only removes your token from this app.
-            You must also revoke access in RTM for complete removal.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <p>1. Click Disconnect in the Remember The Milk connection card.</p>
-          <p>2. Open RTM Apps settings.</p>
-          <p>3. Click Revoke access for the milkbridge app.</p>
-          <a
-            href={rtmAppsSettingsUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 underline-offset-4 hover:underline"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Go to RTM Apps settings
-          </a>
-        </CardContent>
-      </Card>
+      {rtmConnection.status === "connected" || showFullDisconnectNotice ? (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>How to fully disconnect</CardTitle>
+            <CardDescription>
+              Disconnecting in milkbridge only removes your token from this app.
+              You must also revoke access in RTM for complete removal.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <p>1. Click Disconnect in the Remember The Milk connection card.</p>
+            <p>2. Open RTM Apps settings.</p>
+            <p>3. Click Revoke access for the milkbridge app.</p>
+            <a
+              href={rtmAppsSettingsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 underline-offset-4 hover:underline"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Go to RTM Apps settings
+            </a>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* MCP Server Configuration */}
       <Card className="mb-6">

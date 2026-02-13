@@ -12,12 +12,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   CheckCircle2,
-  Zap,
-  Shield,
   ArrowRight,
   ListTodo,
   Bot,
-  Code2,
+  Shield,
+  BookOpen,
+  Workflow,
+  ExternalLink,
 } from "lucide-react";
 
 export default function Home() {
@@ -28,37 +29,31 @@ export default function Home() {
 
   return (
     <div className="container mx-auto px-4 py-16">
-      {/* Hero Section */}
       <div className="text-center mb-16">
         <Badge variant="secondary" className="mb-4">
-          Model Context Protocol
+          Remember The Milk + AI Agents
         </Badge>
         <h1 className="text-5xl font-bold tracking-tight mb-4 bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
-          RTM MCP Server
+          milkbridge
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-          Connect Remember The Milk to Claude, Cursor, and other AI assistants.
-          Manage your tasks with natural language.
+          Bridge Remember The Milk and your AI agents so they can collaborate
+          on real work with clear ownership and safe guardrails.
         </p>
         <div className="flex gap-4 justify-center">
-          <Link href="/login">
+          <Link href="/docs/getting-started">
             <Button size="lg" className="gap-2">
-              Get Started <ArrowRight className="h-4 w-4" />
+              Start Here <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
-          <a
-            href="https://github.com/allen-n/rtm-mcp"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <Link href="/playbooks">
             <Button variant="outline" size="lg" className="gap-2">
-              <Code2 className="h-4 w-4" /> View Source
+              <Workflow className="h-4 w-4" /> Playbooks
             </Button>
-          </a>
+          </Link>
         </div>
       </div>
 
-      {/* Features Grid */}
       <div className="grid md:grid-cols-3 gap-6 mb-16">
         <Card>
           <CardHeader>
@@ -67,8 +62,8 @@ export default function Home() {
             </div>
             <CardTitle>AI-Powered Task Management</CardTitle>
             <CardDescription>
-              Use natural language to create, update, and organize your tasks
-              through Claude Desktop or any MCP client.
+              Use natural language with Claude, Cursor, or other MCP clients to
+              create, update, and organize RTM tasks.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -81,7 +76,7 @@ export default function Home() {
             <CardTitle>Full RTM Integration</CardTitle>
             <CardDescription>
               Access all RTM features: tasks, lists, tags, notes, priorities,
-              due dates, recurrence, and more.
+              due dates, recurrence, and more through 30+ tools.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -93,114 +88,122 @@ export default function Home() {
             </div>
             <CardTitle>Secure & Private</CardTitle>
             <CardDescription>
-              Your RTM credentials are securely stored. API keys give you
-              control over access to your tasks.
+              Use scoped workflows and dedicated agent accounts so who changed
+              what is always clear.
             </CardDescription>
           </CardHeader>
         </Card>
       </div>
 
-      {/* Tools Section */}
       <div className="mb-16">
-        <h2 className="text-3xl font-bold text-center mb-8">
-          30+ MCP Tools Available
-        </h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { name: "get_tasks", desc: "Search and filter tasks" },
-            { name: "add_task", desc: "Create with Smart Add" },
-            { name: "complete_task", desc: "Mark tasks done" },
-            { name: "set_due_date", desc: "Natural language dates" },
-            { name: "set_priority", desc: "Prioritize work" },
-            { name: "add_tags", desc: "Organize with tags" },
-            { name: "add_note", desc: "Attach notes" },
-            { name: "move_task", desc: "Reorganize lists" },
-            { name: "set_recurrence", desc: "Repeating tasks" },
-            { name: "postpone_task", desc: "Defer to tomorrow" },
-            { name: "get_lists", desc: "View all lists" },
-            { name: "create_list", desc: "New lists & smart lists" },
-          ].map((tool) => (
-            <div
-              key={tool.name}
-              className="flex items-center gap-3 p-3 rounded-lg bg-slate-100 dark:bg-slate-800"
-            >
-              <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-              <div>
-                <code className="text-sm font-mono font-semibold">
-                  {tool.name}
-                </code>
-                <p className="text-xs text-muted-foreground">{tool.desc}</p>
-              </div>
-            </div>
-          ))}
+        <h2 className="text-3xl font-bold text-center mb-8">Docs-First Hub</h2>
+        <div className="grid md:grid-cols-3 gap-4">
+          <Link href="/docs/getting-started">
+            <Card className="h-full hover:border-primary transition-colors">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  Getting Started
+                </CardTitle>
+                <CardDescription>
+                  Set up milkbridge, connect RTM, create API keys, and plug in
+                  your first agent.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Link href="/playbooks">
+            <Card className="h-full hover:border-primary transition-colors">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Workflow className="h-5 w-5 text-primary" />
+                  Playbooks
+                </CardTitle>
+                <CardDescription>
+                  Practical workflows for safe AI collaboration in RTM, starting
+                  with dedicated collaborator accounts.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ExternalLink className="h-5 w-5 text-primary" />
+                API & MCP Docs
+              </CardTitle>
+              <CardDescription>
+                Inspect tool schemas, REST wrappers, and integration docs for
+                your clients.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm space-y-1">
+              <p>
+                <a href={docsUrl} className="text-primary hover:underline">
+                  Interactive docs
+                </a>
+              </p>
+              <p>
+                <a href={openApiUrl} className="text-primary hover:underline">
+                  OpenAPI
+                </a>
+              </p>
+              <p>
+                <a href={skillsUrl} className="text-primary hover:underline">
+                  Skills guide
+                </a>
+              </p>
+            </CardContent>
+          </Card>
         </div>
-        <p className="text-center text-muted-foreground mt-4">
-          ...and many more tools for complete RTM control
-        </p>
       </div>
 
-      {/* Quick Start */}
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-yellow-500" />
-            Quick Start
-          </CardTitle>
+          <CardTitle>Core Workflow</CardTitle>
+          <CardDescription>
+            Use a dedicated RTM account for your AI collaborator, share only the
+            lists it should touch, and route work via tags or assignment.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-4">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-              1
-            </div>
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
             <div>
-              <p className="font-medium">Sign in with your account</p>
+              <p className="font-medium">Create a separate account for the AI</p>
               <p className="text-sm text-muted-foreground">
-                Create an account or sign in to get started
+                Keep actions and notes attributable by identity.
               </p>
             </div>
           </div>
-          <div className="flex gap-4">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-              2
-            </div>
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
             <div>
-              <p className="font-medium">Connect Remember The Milk</p>
+              <p className="font-medium">Share only relevant lists/tasks</p>
               <p className="text-sm text-muted-foreground">
-                Authorize access to your RTM account
+                Use assignment or a focused tag to control scope.
               </p>
             </div>
           </div>
-          <div className="flex gap-4">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-              3
-            </div>
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
             <div>
-              <p className="font-medium">Generate an API key</p>
+              <p className="font-medium">Apply guardrails</p>
               <p className="text-sm text-muted-foreground">
-                Use this key to authenticate your MCP client
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-4">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-              4
-            </div>
-            <div>
-              <p className="font-medium">Configure your MCP client</p>
-              <p className="text-sm text-muted-foreground">
-                Add the server URL and API key to Claude Desktop
+                Start read-and-comment first, with no complete/delete actions.
               </p>
             </div>
           </div>
           <div className="pt-4">
-            <Link href="/login">
-              <Button className="w-full">Get Started Now</Button>
+            <Link href="/playbooks/ai-collaborator-account">
+              <Button className="w-full">Read the Collaboration Playbook</Button>
             </Link>
           </div>
         </CardContent>
       </Card>
 
-      {/* LLM Guidance */}
       <Card className="max-w-2xl mx-auto mt-6">
         <CardHeader>
           <CardTitle>For LLM Agents</CardTitle>
@@ -240,10 +243,9 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      {/* Footer */}
       <footer className="text-center mt-16 text-sm text-muted-foreground">
         <p>
-          Built with ❤️ for the MCP ecosystem •{" "}
+          milkbridge •{" "}
           <a
             href="https://github.com/allen-n/rtm-mcp"
             className="text-primary hover:underline"

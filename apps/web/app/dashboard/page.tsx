@@ -29,6 +29,7 @@ import {
 // Public API URL shown to the user (MCP server URL, Claude config, etc.)
 const publicApiBase =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8787";
+const rtmAppsSettingsUrl = "https://www.rememberthemilk.com/app/#settings/apps";
 
 type RtmStatus = "loading" | "connected" | "disconnected" | "error";
 
@@ -49,6 +50,9 @@ export default function DashboardPage() {
   const [copied, setCopied] = useState(false);
   const [copiedConfig, setCopiedConfig] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [showFullDisconnectNotice, setShowFullDisconnectNotice] =
+    useState(false);
+  const [disconnectError, setDisconnectError] = useState<string | null>(null);
   const mcpUrl = `${publicApiBase}/mcp/json`;
   const llmsUrl = `${publicApiBase}/llms.txt`;
   const toolsUrl = `${publicApiBase}/api/v1/tools`;
@@ -57,7 +61,7 @@ export default function DashboardPage() {
   const openApiUrl = `${publicApiBase}/api/v1/openapi.json`;
   const sharedConfig = `{
   "mcpServers": {
-    "rtm": {
+    "milkbridge": {
       "url": "${mcpUrl}",
       "headers": {
         "x-api-key": "YOUR_API_KEY"
@@ -121,6 +125,7 @@ export default function DashboardPage() {
   }
 
   async function handleDisconnectRtm() {
+    setDisconnectError(null);
     try {
       const res = await fetch("/rtm/disconnect", {
         method: "POST",
@@ -128,9 +133,13 @@ export default function DashboardPage() {
       });
       if (res.ok) {
         setRtmConnection({ status: "disconnected" });
+        setShowFullDisconnectNotice(true);
+      } else {
+        setDisconnectError("Failed to disconnect in milkbridge.");
       }
     } catch (error) {
       console.error("Failed to disconnect RTM:", error);
+      setDisconnectError("Failed to disconnect in milkbridge.");
     }
   }
 
@@ -179,7 +188,7 @@ export default function DashboardPage() {
               <div>
                 <CardTitle className="text-xl">Remember The Milk</CardTitle>
                 <CardDescription>
-                  Connect your RTM account to use the MCP server
+                  Connect your RTM account to use milkbridge
                 </CardDescription>
               </div>
             </div>
@@ -219,6 +228,12 @@ export default function DashboardPage() {
                   Disconnect
                 </Button>
               </div>
+              {disconnectError ? (
+                <Alert variant="destructive">
+                  <AlertTitle>Disconnect failed</AlertTitle>
+                  <AlertDescription>{disconnectError}</AlertDescription>
+                </Alert>
+              ) : null}
             </div>
           ) : rtmConnection.status === "loading" ? (
             <div className="flex items-center justify-center py-8">
@@ -226,6 +241,30 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-4">
+              {showFullDisconnectNotice ? (
+                <Alert>
+                  <AlertTitle>
+                    Step 2 required: revoke access in Remember The Milk
+                  </AlertTitle>
+                  <AlertDescription className="space-y-3">
+                    <p>
+                      You disconnected milkbridge locally. To fully remove app
+                      access, revoke it on RTM Apps settings.
+                    </p>
+                    <div>
+                      <a
+                        href={rtmAppsSettingsUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 underline-offset-4 hover:underline"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Open RTM Apps settings
+                      </a>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              ) : null}
               <Alert>
                 <AlertTitle>Connect your RTM account</AlertTitle>
                 <AlertDescription>
@@ -248,6 +287,30 @@ export default function DashboardPage() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>How to fully disconnect</CardTitle>
+          <CardDescription>
+            Disconnecting in milkbridge only removes your token from this app.
+            You must also revoke access in RTM for complete removal.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p>1. Click Disconnect in the Remember The Milk connection card.</p>
+          <p>2. Open RTM Apps settings.</p>
+          <p>3. Click Revoke access for the milkbridge app.</p>
+          <a
+            href={rtmAppsSettingsUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 underline-offset-4 hover:underline"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Go to RTM Apps settings
+          </a>
         </CardContent>
       </Card>
 

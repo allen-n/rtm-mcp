@@ -10,9 +10,9 @@ const metadataBase = process.env.NEXT_PUBLIC_SITE_URL
 
 export const metadata: Metadata = {
   metadataBase,
-  title: "Remember The Milk MCP Server",
+  title: "milkbridge",
   description:
-    "Connect Remember The Milk to Claude and other AI assistants via MCP",
+    "Bridge Remember The Milk and your AI agents so they can collaborate on tasks and get work done.",
   icons: {
     icon: "/icon.svg",
     apple: "/icon.svg",
@@ -21,24 +21,25 @@ export const metadata: Metadata = {
     "Remember The Milk",
     "MCP",
     "Model Context Protocol",
+    "milkbridge",
     "Claude",
     "AI assistants",
     "tasks integration",
     "automation",
   ],
-  // Note: og:image and twitter:image tags are automatically generated
-  // by Next.js from apps/web/app/opengraph-image.tsx
   openGraph: {
-    title: "Remember The Milk MCP Server",
+    title: "milkbridge",
     description:
-      "Connect Remember The Milk to Claude and other AI assistants via MCP",
+      "Bridge Remember The Milk and your AI agents so they can collaborate on tasks and get work done.",
     type: "website",
+    images: ["/og/milkbridge-og-v1.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Remember The Milk MCP Server",
+    title: "milkbridge",
     description:
-      "Connect Remember The Milk to Claude and other AI assistants via MCP",
+      "Bridge Remember The Milk and your AI agents so they can collaborate on tasks and get work done.",
+    images: ["/og/milkbridge-og-v1.png"],
   },
 };
 

@@ -99,8 +99,8 @@ export default function LoginPage() {
             </CardTitle>
             <CardDescription>
               {isLogin
-                ? "Sign in to manage your RTM MCP connection"
-                : "Get started with RTM MCP Server"}
+                ? "Sign in to manage your milkbridge connection"
+                : "Get started with milkbridge"}
             </CardDescription>
           </CardHeader>
           <CardContent>

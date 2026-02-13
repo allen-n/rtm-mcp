@@ -112,7 +112,8 @@ export default function DashboardPage() {
 
   async function handleLogout() {
     await authClient.signOut();
-    router.push("/");
+    router.replace("/");
+    router.refresh();
   }
 
   async function handleConnectRtm() {

@@ -31,14 +31,31 @@ export default function Home() {
     <div className="container mx-auto px-4 py-16">
       <div className="text-center mb-16">
         <Badge variant="secondary" className="mb-4">
-          Remember The Milk + AI Agents
+          <a
+            href="https://www.rememberthemilk.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="underline-offset-4 hover:underline"
+          >
+            Remember The Milk
+          </a>{" "}
+          + AI Agents
         </Badge>
-        <h1 className="text-5xl font-bold tracking-tight mb-4 bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+        <h1 className="block text-4xl sm:text-5xl font-bold tracking-tight mb-4 text-blue-600">
           milkbridge
         </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-          Bridge Remember The Milk and your AI agents so they can collaborate
-          on real work with clear ownership and safe guardrails.
+        <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 px-2">
+          Bridge{" "}
+          <a
+            href="https://www.rememberthemilk.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="underline-offset-4 hover:underline"
+          >
+            Remember The Milk
+          </a>{" "}
+          and your AI agents so they can collaborate on real work with clear
+          ownership and safe guardrails.
         </p>
         <div className="flex gap-4 justify-center">
           <Link href="/docs/getting-started">
@@ -96,7 +113,9 @@ export default function Home() {
       </div>
 
       <div className="mb-16">
-        <h2 className="text-3xl font-bold text-center mb-8">Docs-First Hub</h2>
+        <h2 className="text-3xl font-bold text-center mb-8">
+          Documentation Hub
+        </h2>
         <div className="grid md:grid-cols-3 gap-4">
           <Link href="/docs/getting-started">
             <Card className="h-full hover:border-primary transition-colors">
@@ -172,7 +191,9 @@ export default function Home() {
           <div className="flex items-start gap-3">
             <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
             <div>
-              <p className="font-medium">Create a separate account for the AI</p>
+              <p className="font-medium">
+                Create a separate account for the AI
+              </p>
               <p className="text-sm text-muted-foreground">
                 Keep actions and notes attributable by identity.
               </p>
@@ -198,7 +219,9 @@ export default function Home() {
           </div>
           <div className="pt-4">
             <Link href="/playbooks/ai-collaborator-account">
-              <Button className="w-full">Read the Collaboration Playbook</Button>
+              <Button className="w-full">
+                Read the Collaboration Playbook
+              </Button>
             </Link>
           </div>
         </CardContent>

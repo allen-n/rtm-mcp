@@ -36,10 +36,17 @@ COPY . .
 # Accept NEXT_PUBLIC_* vars as build args so they are inlined into the client bundle
 ARG NEXT_PUBLIC_API_BASE
 ENV NEXT_PUBLIC_API_BASE=$NEXT_PUBLIC_API_BASE
+ARG NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 
 # Server-side URL for proxying auth requests (e.g. Docker service name, Railway private URL)
 ARG API_BASE_INTERNAL
 ENV API_BASE_INTERNAL=$API_BASE_INTERNAL
+
+# Fail fast if critical build-time vars are missing.
+RUN : "${NEXT_PUBLIC_API_BASE:?NEXT_PUBLIC_API_BASE build arg is required}" \
+ && : "${NEXT_PUBLIC_SITE_URL:?NEXT_PUBLIC_SITE_URL build arg is required}" \
+ && : "${API_BASE_INTERNAL:?API_BASE_INTERNAL build arg is required}"
 
 # Build the app
 RUN pnpm --filter @apps/web build

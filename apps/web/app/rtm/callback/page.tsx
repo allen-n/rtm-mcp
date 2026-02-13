@@ -20,6 +20,7 @@ export default function RtmCallbackPage() {
     "loading",
   );
   const [error, setError] = useState<string | null>(null);
+  const [secondsRemaining, setSecondsRemaining] = useState(5);
 
   useEffect(() => {
     async function completeAuth() {
@@ -47,6 +48,29 @@ export default function RtmCallbackPage() {
 
     completeAuth();
   }, []);
+
+  useEffect(() => {
+    if (status !== "success") {
+      return;
+    }
+
+    setSecondsRemaining(5);
+    const redirectTimer = setTimeout(() => {
+      router.push("/dashboard");
+    }, 5000);
+
+    const countdownTimer = setInterval(() => {
+      setSecondsRemaining((prev) => {
+        if (prev <= 1) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      clearTimeout(redirectTimer);
+      clearInterval(countdownTimer);
+    };
+  }, [status, router]);
 
   const handleGoHome = () => {
     router.push("/dashboard");
@@ -92,7 +116,7 @@ export default function RtmCallbackPage() {
               <Button variant="destructive" onClick={handleGoHome}>
                 Return to dashboard
               </Button>
-              <Button variant="outline" onClick={handleGoHome}>
+              <Button variant="outline" onClick={() => router.push("/rtm/start")}>
                 Try again
               </Button>
             </div>
@@ -111,11 +135,16 @@ export default function RtmCallbackPage() {
           </div>
           <CardTitle>Connected to Remember The Milk</CardTitle>
           <CardDescription className="text-green-800/80 dark:text-green-100/70">
-            Your account is linked. You can start using the RTM MCP server now.
+            Your account is linked. You can start using milkbridge now.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <Button onClick={handleGoHome}>Go to dashboard</Button>
+          <div className="flex flex-col items-center gap-3">
+            <Button onClick={handleGoHome}>Go to dashboard now</Button>
+            <p className="text-sm text-green-800/80 dark:text-green-100/70">
+              Redirecting automatically in {secondsRemaining}s...
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

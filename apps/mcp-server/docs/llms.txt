@@ -1,10 +1,10 @@
-# RTM MCP Server
+# milkbridge
 
-> Remember The Milk API for AI agents
+> Bridge Remember The Milk and AI agents
 
 ## Overview
 
-This service provides a REST API and MCP (Model Context Protocol) server for managing tasks in Remember The Milk (RTM).
+milkbridge provides a REST API and MCP (Model Context Protocol) server for managing tasks in Remember The Milk (RTM).
 
 ## Authentication
 

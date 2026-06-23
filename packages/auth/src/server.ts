@@ -1,12 +1,27 @@
 import { pool } from "@db/kysely"; // If using better auth cli, use the absolute path import for the module
+import { apiKey } from "@better-auth/api-key";
+import { oauthProvider } from "@better-auth/oauth-provider";
 import { betterAuth } from "better-auth";
-import { apiKey } from "better-auth/plugins";
+import { jwt } from "better-auth/plugins";
 import type { Session, SessionUser } from "./types";
 
 const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
 if (!betterAuthSecret) {
   throw new Error("BETTER_AUTH_SECRET environment variable is required");
 }
+
+const normalizeOrigin = (url: string | undefined, fallback: string) =>
+  (url?.trim() || fallback).replace(/\/+$/, "");
+
+const appBaseUrl = normalizeOrigin(
+  process.env.APP_BASE_URL,
+  "http://localhost:8787",
+);
+const webAppUrl = normalizeOrigin(
+  process.env.WEB_APP_URL || process.env.BETTER_AUTH_URL,
+  "http://localhost:3000",
+);
+const oauthScopes = ["mcp:access", "offline_access"];
 
 // Configure authentication with OAuth and email/password support
 export const auth = betterAuth({
@@ -16,7 +31,7 @@ export const auth = betterAuth({
 
   secret: betterAuthSecret,
 
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:8787",
+  baseURL: normalizeOrigin(process.env.BETTER_AUTH_URL, webAppUrl),
 
   // Map BetterAuth's camelCase field names to our snake_case database columns
   user: {
@@ -78,10 +93,7 @@ export const auth = betterAuth({
   },
 
   // CORS for web app
-  trustedOrigins: [
-    "http://localhost:3000",
-    process.env.WEB_APP_URL || "",
-  ].filter(Boolean),
+  trustedOrigins: ["http://localhost:3000", webAppUrl].filter(Boolean),
 
   // Cookie configuration
   // Auth requests are proxied through Next.js (same-origin), so lax is sufficient
@@ -95,9 +107,29 @@ export const auth = betterAuth({
 
   // API Key plugin for MCP server authentication
   plugins: [
+    jwt(),
+    oauthProvider({
+      loginPage: "/login",
+      consentPage: "/oauth/consent",
+      allowDynamicClientRegistration: true,
+      allowUnauthenticatedClientRegistration: true,
+      grantTypes: ["authorization_code", "refresh_token"],
+      scopes: oauthScopes,
+      validAudiences: [`${appBaseUrl}/mcp`],
+      clientRegistrationDefaultScopes: ["mcp:access"],
+      clientRegistrationAllowedScopes: ["offline_access"],
+    }),
     apiKey({
       // Header to check for API key
       apiKeyHeaders: ["x-api-key"],
+
+      schema: {
+        apikey: {
+          fields: {
+            referenceId: "userId",
+          },
+        },
+      },
 
       // Rate limiting per API key
       rateLimit: {

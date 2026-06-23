@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@auth/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,15 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, Mail, Lock, Loader2, Github } from "lucide-react";
 
-export default function LoginPage() {
+function getOAuthRedirectUrl(data: unknown) {
+  if (!data || typeof data !== "object") return null;
+  const record = data as { url?: unknown; redirect_uri?: unknown };
+  if (typeof record.url === "string") return record.url;
+  if (typeof record.redirect_uri === "string") return record.redirect_uri;
+  return null;
+}
+
+function LoginContent() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,6 +32,24 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isOAuthFlow = searchParams.has("client_id");
+
+  async function continueOAuthFlow() {
+    const result = await authClient.oauth2.continue({ postLogin: true });
+    if (result.error) {
+      setError(result.error.message || "Authorization failed");
+      return;
+    }
+
+    const redirectUrl = getOAuthRedirectUrl(result.data);
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
+      return;
+    }
+
+    router.push("/dashboard");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,6 +66,8 @@ export default function LoginPage() {
 
         if (result.error) {
           setError(result.error.message || "Login failed");
+        } else if (isOAuthFlow) {
+          await continueOAuthFlow();
         } else {
           router.push("/dashboard");
         }
@@ -55,7 +83,9 @@ export default function LoginPage() {
           setError(result.error.message || "Sign up failed");
         }
         // Redirect to dashboard using Next.js navigation if not handled by callback
-        else if (result.data.user) {
+        else if (isOAuthFlow) {
+          await continueOAuthFlow();
+        } else if (result.data.user) {
           router.push("/dashboard");
         }
       }
@@ -168,7 +198,11 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {isLogin ? "Signing in..." : "Creating account..."}
+                    {isOAuthFlow
+                      ? "Authorizing..."
+                      : isLogin
+                        ? "Signing in..."
+                        : "Creating account..."}
                   </>
                 ) : isLogin ? (
                   "Sign in"
@@ -220,5 +254,19 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

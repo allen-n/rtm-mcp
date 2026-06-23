@@ -70,6 +70,10 @@ const nextConfig = {
         destination: `${apiBase}/api/auth/:path*`,
       },
       {
+        source: "/.well-known/oauth-authorization-server",
+        destination: `${apiBase}/.well-known/oauth-authorization-server`,
+      },
+      {
         source: "/api/v1/:path*",
         destination: `${apiBase}/api/v1/:path*`,
       },

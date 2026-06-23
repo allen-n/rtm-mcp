@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { oauthResourceClient } from "@auth/oauth-resource";
 import type { Session } from "@auth/server";
 import { auth, getSession } from "@auth/server";
 import { StreamableHTTPTransport } from "@hono/mcp";
@@ -13,6 +14,12 @@ import { webhookRoutes } from "./routes/webhook.js";
 import { apiRoutes } from "./routes/api.js";
 import { RelaxedStreamableHTTPTransport } from "./relaxed-http.js";
 import { getStaticDoc } from "./static-docs.js";
+import {
+  createProtectedResourceMetadata,
+  createWwwAuthenticateHeader,
+  getMcpResourceUrl,
+  resolveMcpAuthenticatedUser,
+} from "./mcp-auth.js";
 
 type SessionResult = NonNullable<Session>;
 
@@ -59,15 +66,16 @@ app.use(
       return "";
     },
     credentials: true,
-    exposeHeaders: ["MCP-Session-Id"],
+    exposeHeaders: ["MCP-Session-Id", "WWW-Authenticate"],
     allowHeaders: [
       "Content-Type",
       "MCP-Session-Id",
       "x-api-key",
+      "Authorization",
       "Accept",
       "x-custom-auth-headers",
     ],
-  })
+  }),
 );
 
 // Session middleware
@@ -91,14 +99,63 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
   return auth.handler(c.req.raw);
 });
 
+function protectedResourceMetadataResponse() {
+  return new Response(
+    JSON.stringify(
+      createProtectedResourceMetadata({
+        appBaseUrl: process.env.APP_BASE_URL,
+        webAppUrl: process.env.WEB_APP_URL || process.env.BETTER_AUTH_URL,
+      }),
+    ),
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control":
+          "public, max-age=15, stale-while-revalidate=15, stale-if-error=86400",
+      },
+    },
+  );
+}
+
+function rewriteRequestPath(request: Request, pathname: string) {
+  const url = new URL(request.url);
+  url.pathname = pathname;
+  return new Request(url, request);
+}
+
+app.get(
+  "/.well-known/oauth-protected-resource/mcp",
+  protectedResourceMetadataResponse,
+);
+app.get(
+  "/.well-known/oauth-protected-resource",
+  protectedResourceMetadataResponse,
+);
+app.get("/.well-known/oauth-authorization-server", (c) => {
+  return auth.handler(
+    rewriteRequestPath(
+      c.req.raw,
+      "/api/auth/.well-known/oauth-authorization-server",
+    ),
+  );
+});
+
 // Mount routes
 app.route("/rtm", authRoutes());
 app.route("/webhook", webhookRoutes());
 app.route("/api/v1", apiRoutes());
 
+function mcpAuthErrorResponse(status: 401 | 403, error: string) {
+  const headers = new Headers({ "Content-Type": "application/json" });
+  if (status === 401) {
+    headers.set("WWW-Authenticate", createWwwAuthenticateHeader());
+  }
+  return new Response(JSON.stringify({ error }), { status, headers });
+}
+
 async function handleMcpRequest(
   c: Context,
-  options: { relaxed: boolean }
+  options: { relaxed: boolean; allowOAuth: boolean },
 ) {
   const requestId = randomUUID();
   httpLogger.info("MCP request received", {
@@ -106,62 +163,72 @@ async function handleMcpRequest(
     relaxed: options.relaxed,
   });
 
-  let userId: string | null = null;
+  const authResult = await resolveMcpAuthenticatedUser(
+    {
+      apiKey: c.req.header("x-api-key"),
+      authorization: options.allowOAuth ? c.req.header("Authorization") : null,
+      sessionUserId: c.get("user")?.id,
+    },
+    {
+      verifyApiKey: async (apiKey) => {
+        authLogger.info("API key found in header", { requestId });
+        try {
+          const apiKeyResult = await auth.api.verifyApiKey({
+            body: { key: apiKey },
+          });
+          return apiKeyResult?.valid && apiKeyResult.key
+            ? apiKeyResult.key.referenceId
+            : null;
+        } catch (error) {
+          authLogger.error(
+            "API key verification error",
+            error,
+            undefined,
+            requestId,
+          );
+          return null;
+        }
+      },
+      verifyOAuthBearer: async (bearerToken) => {
+        try {
+          const payload = await oauthResourceClient.verifyAccessToken(
+            bearerToken,
+            {
+              verifyOptions: {
+                audience: getMcpResourceUrl(),
+              },
+            },
+          );
+          const scopes = payload.scope ?? payload.scopes;
+          return {
+            userId: typeof payload.sub === "string" ? payload.sub : null,
+            scopes:
+              typeof scopes === "string" || Array.isArray(scopes)
+                ? scopes
+                : null,
+          };
+        } catch (error) {
+          authLogger.warn("OAuth bearer verification failed", {
+            requestId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          return null;
+        }
+      },
+    },
+  );
 
-  // Try API key authentication first
-  const apiKeyHeader = c.req.header("x-api-key");
-  if (apiKeyHeader) {
-    authLogger.info("API key found in header", { requestId });
-    try {
-      const apiKeyResult = await auth.api.verifyApiKey({
-        body: { key: apiKeyHeader },
-      });
-
-      if (apiKeyResult?.valid && apiKeyResult.key) {
-        userId = apiKeyResult.key.userId;
-        authLogger.info("API key authentication successful", {
-          userId,
-          requestId,
-        });
-      } else {
-        authLogger.warn("API key invalid", { requestId });
-      }
-    } catch (error) {
-      authLogger.error(
-        "API key verification error",
-        error,
-        undefined,
-        requestId
-      );
-    }
-  } else {
-    authLogger.info("No API key in header, trying session auth", { requestId });
+  if (!authResult.ok) {
+    authLogger.error(authResult.error, undefined, undefined, requestId);
+    return mcpAuthErrorResponse(authResult.status, authResult.error);
   }
 
-  // Fall back to session authentication
-  if (!userId) {
-    const user = c.get("user");
-    if (user?.id) {
-      userId = user.id;
-      authLogger.info("Session authentication successful", {
-        userId,
-        requestId,
-      });
-    } else {
-      authLogger.warn("No session user found", { requestId });
-    }
-  }
-
-  // Require authentication via either method
-  if (!userId) {
-    authLogger.error(
-      "Unauthorized - no valid authentication",
-      undefined,
-      undefined,
-      requestId
-    );
-    return c.json({ error: "Unauthorized" }, 401);
-  }
+  const userId = authResult.userId;
+  authLogger.info("MCP authentication successful", {
+    method: authResult.method,
+    userId,
+    requestId,
+  });
 
   mcpLogger.info("Starting MCP transport handler", { userId, requestId });
   try {
@@ -207,8 +274,12 @@ async function handleMcpRequest(
   }
 }
 
-app.all("/mcp", (c) => handleMcpRequest(c, { relaxed: false }));
-app.all("/mcp/json", (c) => handleMcpRequest(c, { relaxed: true }));
+app.all("/mcp", (c) =>
+  handleMcpRequest(c, { relaxed: false, allowOAuth: true }),
+);
+app.all("/mcp/json", (c) =>
+  handleMcpRequest(c, { relaxed: true, allowOAuth: false }),
+);
 
 // llms.txt - AI-friendly overview
 app.get("/llms.txt", async (c) => {
@@ -236,7 +307,7 @@ app.onError((err, c) => {
       error: "Internal server error",
       message: err.message,
     },
-    500
+    500,
   );
 });
 

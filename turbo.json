@@ -3,6 +3,14 @@
   "globalDependencies": [
     "**/.env.*local"
   ],
+  "globalEnv": [
+    "API_BASE_INTERNAL",
+    "APP_BASE_URL",
+    "BETTER_AUTH_URL",
+    "NEXT_PUBLIC_API_BASE",
+    "NEXT_PUBLIC_SITE_URL",
+    "WEB_APP_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": [

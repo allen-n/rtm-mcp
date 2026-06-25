@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@auth/client";
+import { getOAuthRedirectUrl } from "@/lib/oauth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,14 +16,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, Mail, Lock, Loader2, Github } from "lucide-react";
-
-function getOAuthRedirectUrl(data: unknown) {
-  if (!data || typeof data !== "object") return null;
-  const record = data as { url?: unknown; redirect_uri?: unknown };
-  if (typeof record.url === "string") return record.url;
-  if (typeof record.redirect_uri === "string") return record.redirect_uri;
-  return null;
-}
 
 function LoginContent() {
   const [isLogin, setIsLogin] = useState(true);
@@ -82,11 +75,14 @@ function LoginContent() {
         if (result.error) {
           setError(result.error.message || "Sign up failed");
         }
-        // Redirect to dashboard using Next.js navigation if not handled by callback
-        else if (isOAuthFlow) {
-          await continueOAuthFlow();
-        } else if (result.data.user) {
-          router.push("/dashboard");
+        // Only proceed once signup actually established a session; otherwise
+        // (e.g. email verification pending) continuing the OAuth flow would fail.
+        else if (result.data?.user) {
+          if (isOAuthFlow) {
+            await continueOAuthFlow();
+          } else {
+            router.push("/dashboard");
+          }
         }
       }
     } catch (err) {

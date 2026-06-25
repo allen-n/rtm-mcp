@@ -76,12 +76,14 @@ export function createProtectedResourceMetadata(
 
 export function createWwwAuthenticateHeader(
   appBaseUrl = process.env.APP_BASE_URL,
+  error?: string,
 ): string {
   const metadataUrl = `${normalizeOrigin(
     appBaseUrl,
     DEFAULT_API_BASE_URL,
   )}/.well-known/oauth-protected-resource/mcp`;
-  return `Bearer resource_metadata="${metadataUrl}"`;
+  const errorParam = error ? `error="${error}", ` : "";
+  return `Bearer ${errorParam}resource_metadata="${metadataUrl}"`;
 }
 
 function bearerTokenFromAuthorization(

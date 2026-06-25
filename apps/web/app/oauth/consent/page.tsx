@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@auth/client";
+import { getOAuthRedirectUrl } from "@/lib/oauth";
 import { AlertTriangle, Loader2, ShieldCheck, XCircle } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -22,14 +23,6 @@ type PublicClient = {
   uri?: string | null;
   icon?: string | null;
 };
-
-function getOAuthRedirectUrl(data: unknown) {
-  if (!data || typeof data !== "object") return null;
-  const record = data as { url?: unknown; redirect_uri?: unknown };
-  if (typeof record.url === "string") return record.url;
-  if (typeof record.redirect_uri === "string") return record.redirect_uri;
-  return null;
-}
 
 function OAuthConsentContent() {
   const router = useRouter();

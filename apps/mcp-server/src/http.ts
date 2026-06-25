@@ -149,6 +149,13 @@ function mcpAuthErrorResponse(status: 401 | 403, error: string) {
   const headers = new Headers({ "Content-Type": "application/json" });
   if (status === 401) {
     headers.set("WWW-Authenticate", createWwwAuthenticateHeader());
+  } else if (status === 403) {
+    // RFC 6750 §3.1: insufficient scope SHOULD return a challenge so the
+    // client can re-request authorization with the required scope.
+    headers.set(
+      "WWW-Authenticate",
+      createWwwAuthenticateHeader(undefined, "insufficient_scope"),
+    );
   }
   return new Response(JSON.stringify({ error }), { status, headers });
 }

@@ -64,6 +64,14 @@ export interface Apikey {
   userId: string;
 }
 
+export interface Jwks {
+  createdAt: Timestamp;
+  expiresAt: Timestamp | null;
+  id: string;
+  privateKey: string;
+  publicKey: string;
+}
+
 export interface OauthAccessToken {
   clientId: string;
   createdAt: Timestamp;
@@ -199,6 +207,7 @@ export interface WebhookSubs {
 export interface DB {
   account: Account;
   apikey: Apikey;
+  jwks: Jwks;
   oauthAccessToken: OauthAccessToken;
   oauthClient: OauthClient;
   oauthConsent: OauthConsent;

@@ -1,4 +1,4 @@
-import { type Kysely, sql } from "kysely";
+import type { Kysely } from "kysely";
 
 export async function up(db: Kysely<unknown>): Promise<void> {
   await db.schema
@@ -10,7 +10,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn("skipConsent", "boolean")
     .addColumn("enableEndSession", "boolean")
     .addColumn("subjectType", "text")
-    .addColumn("scopes", sql`text[]`)
+    .addColumn("scopes", "jsonb")
     .addColumn("userId", "text", (col) =>
       col.references("user.id").onDelete("cascade"),
     )
@@ -20,17 +20,17 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn("name", "text")
     .addColumn("uri", "text")
     .addColumn("icon", "text")
-    .addColumn("contacts", sql`text[]`)
+    .addColumn("contacts", "jsonb")
     .addColumn("tos", "text")
     .addColumn("policy", "text")
     .addColumn("softwareId", "text")
     .addColumn("softwareVersion", "text")
     .addColumn("softwareStatement", "text")
-    .addColumn("redirectUris", sql`text[]`, (col) => col.notNull())
-    .addColumn("postLogoutRedirectUris", sql`text[]`)
+    .addColumn("redirectUris", "jsonb", (col) => col.notNull())
+    .addColumn("postLogoutRedirectUris", "jsonb")
     .addColumn("tokenEndpointAuthMethod", "text")
-    .addColumn("grantTypes", sql`text[]`)
-    .addColumn("responseTypes", sql`text[]`)
+    .addColumn("grantTypes", "jsonb")
+    .addColumn("responseTypes", "jsonb")
     .addColumn("public", "boolean")
     .addColumn("type", "text")
     .addColumn("requirePKCE", "boolean")
@@ -61,7 +61,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn("createdAt", "timestamptz", (col) => col.notNull())
     .addColumn("revoked", "timestamptz")
     .addColumn("authTime", "timestamptz")
-    .addColumn("scopes", sql`text[]`, (col) => col.notNull())
+    .addColumn("scopes", "jsonb", (col) => col.notNull())
     .execute();
 
   await db.schema
@@ -83,7 +83,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
   await db.schema
     .createTable("oauthAccessToken")
     .addColumn("id", "text", (col) => col.notNull().primaryKey())
-    .addColumn("token", "text", (col) => col.unique())
+    .addColumn("token", "text", (col) => col.notNull().unique())
     .addColumn("clientId", "text", (col) =>
       col.notNull().references("oauthClient.clientId").onDelete("cascade"),
     )
@@ -99,7 +99,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     )
     .addColumn("expiresAt", "timestamptz", (col) => col.notNull())
     .addColumn("createdAt", "timestamptz", (col) => col.notNull())
-    .addColumn("scopes", sql`text[]`, (col) => col.notNull())
+    .addColumn("scopes", "jsonb", (col) => col.notNull())
     .execute();
 
   await db.schema
@@ -130,10 +130,10 @@ export async function up(db: Kysely<unknown>): Promise<void> {
       col.notNull().references("oauthClient.clientId").onDelete("cascade"),
     )
     .addColumn("userId", "text", (col) =>
-      col.references("user.id").onDelete("cascade"),
+      col.notNull().references("user.id").onDelete("cascade"),
     )
     .addColumn("referenceId", "text")
-    .addColumn("scopes", sql`text[]`, (col) => col.notNull())
+    .addColumn("scopes", "jsonb", (col) => col.notNull())
     .addColumn("createdAt", "timestamptz", (col) => col.notNull())
     .addColumn("updatedAt", "timestamptz", (col) => col.notNull())
     .execute();

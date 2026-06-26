@@ -115,6 +115,11 @@ export const auth = betterAuth({
       allowDynamicClientRegistration: true,
       allowUnauthenticatedClientRegistration: true,
       grantTypes: ["authorization_code", "refresh_token"],
+      prefix: {
+        opaqueAccessToken: "mb_at_",
+        refreshToken: "mb_rt_",
+        clientSecret: "mb_cs_",
+      },
       scopes: oauthScopes,
       validAudiences: [`${appBaseUrl}/mcp`],
       clientRegistrationDefaultScopes: ["mcp:access"],

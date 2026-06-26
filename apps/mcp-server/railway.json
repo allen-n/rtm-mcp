@@ -16,6 +16,7 @@
       "variables": {
         "APP_BASE_URL": "https://${{mcp.RAILWAY_PUBLIC_DOMAIN}}",
         "BETTER_AUTH_URL": "https://${{web.RAILWAY_PUBLIC_DOMAIN}}",
+        "RTM_CALLBACK_URL": "https://${{mcp.RAILWAY_PUBLIC_DOMAIN}}/rtm/callback",
         "WEB_APP_URL": "https://${{web.RAILWAY_PUBLIC_DOMAIN}}"
       }
     }

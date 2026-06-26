@@ -79,32 +79,32 @@ export interface OauthAccessToken {
   id: string;
   referenceId: string | null;
   refreshId: string | null;
-  scopes: string[];
+  scopes: Json;
   sessionId: string | null;
-  token: string | null;
+  token: string;
   userId: string | null;
 }
 
 export interface OauthClient {
   clientId: string;
   clientSecret: string | null;
-  contacts: string[] | null;
+  contacts: Json | null;
   createdAt: Timestamp | null;
   disabled: Generated<boolean | null>;
   enableEndSession: boolean | null;
-  grantTypes: string[] | null;
+  grantTypes: Json | null;
   icon: string | null;
   id: string;
   metadata: Json | null;
   name: string | null;
   policy: string | null;
-  postLogoutRedirectUris: string[] | null;
+  postLogoutRedirectUris: Json | null;
   public: boolean | null;
-  redirectUris: string[];
+  redirectUris: Json;
   referenceId: string | null;
   requirePKCE: boolean | null;
-  responseTypes: string[] | null;
-  scopes: string[] | null;
+  responseTypes: Json | null;
+  scopes: Json | null;
   skipConsent: boolean | null;
   softwareId: string | null;
   softwareStatement: string | null;
@@ -123,9 +123,9 @@ export interface OauthConsent {
   createdAt: Timestamp;
   id: string;
   referenceId: string | null;
-  scopes: string[];
+  scopes: Json;
   updatedAt: Timestamp;
-  userId: string | null;
+  userId: string;
 }
 
 export interface OauthRefreshToken {
@@ -136,7 +136,7 @@ export interface OauthRefreshToken {
   id: string;
   referenceId: string | null;
   revoked: Timestamp | null;
-  scopes: string[];
+  scopes: Json;
   sessionId: string | null;
   token: string;
   userId: string;

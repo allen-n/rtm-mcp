@@ -55,7 +55,7 @@ export function ApiKeySection() {
       });
       if (res.ok) {
         const data = await res.json();
-        setApiKeys(data || []);
+        setApiKeys(data.apiKeys || []);
       }
     } catch (error) {
       console.error("Failed to load API keys:", error);

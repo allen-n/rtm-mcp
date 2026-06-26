@@ -148,6 +148,15 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .on("oauthConsent")
     .column("userId")
     .execute();
+
+    await db.schema
+    .createTable("jwks")
+    .addColumn("id", "text", (col) => col.notNull().primaryKey())
+    .addColumn("publicKey", "text", (col) => col.notNull())
+    .addColumn("privateKey", "text", (col) => col.notNull())
+    .addColumn("createdAt", "timestamptz", (col) => col.notNull())
+    .addColumn("expiresAt", "timestamptz")
+    .execute();
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {
@@ -155,4 +164,5 @@ export async function down(db: Kysely<unknown>): Promise<void> {
   await db.schema.dropTable("oauthAccessToken").execute();
   await db.schema.dropTable("oauthRefreshToken").execute();
   await db.schema.dropTable("oauthClient").execute();
+  await db.schema.dropTable("jwks").execute();
 }

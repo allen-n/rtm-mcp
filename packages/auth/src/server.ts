@@ -1,4 +1,5 @@
 import { pool } from "@db/kysely"; // If using better auth cli, use the absolute path import for the module
+// import {pool} from "<path-to>/rtm-mcp/packages/db/src/kysely"
 import { apiKey } from "@better-auth/api-key";
 import { oauthProvider } from "@better-auth/oauth-provider";
 import { betterAuth } from "better-auth";

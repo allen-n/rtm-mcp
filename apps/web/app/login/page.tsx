@@ -83,6 +83,10 @@ function LoginContent() {
           } else {
             router.push("/dashboard");
           }
+        } else {
+          setError(
+            "Account created. Please verify your email or sign in before continuing authorization.",
+          );
         }
       }
     } catch (err) {

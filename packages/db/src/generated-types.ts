@@ -40,7 +40,7 @@ export interface Account {
 }
 
 export interface Apikey {
-  configId: Generated<string>;
+  config_id: Generated<string>;
   createdAt: Timestamp;
   enabled: boolean | null;
   expiresAt: Timestamp | null;

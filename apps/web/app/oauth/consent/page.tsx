@@ -40,29 +40,33 @@ function OAuthConsentContent() {
 
   useEffect(() => {
     async function loadClient() {
-      const session = await authClient.getSession();
-      if (!session.data?.user) {
-        const query = searchParams.toString();
-        router.replace(query ? `/login?${query}` : "/login");
-        return;
-      }
+      try {
+        const session = await authClient.getSession();
+        if (!session.data?.user) {
+          const query = searchParams.toString();
+          router.replace(query ? `/login?${query}` : "/login");
+          return;
+        }
 
-      if (!clientId) {
-        setError("Missing OAuth client.");
+        if (!clientId) {
+          setError("Missing OAuth client.");
+          return;
+        }
+
+        const result = await authClient.oauth2.publicClient({
+          query: { client_id: clientId },
+        });
+
+        if (result.error) {
+          setError(result.error.message || "Could not load OAuth client.");
+        } else {
+          setClient(result.data as PublicClient);
+        }
+      } catch {
+        setError("Could not load OAuth request.");
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const result = await authClient.oauth2.publicClient({
-        query: { client_id: clientId },
-      });
-
-      if (result.error) {
-        setError(result.error.message || "Could not load OAuth client.");
-      } else {
-        setClient(result.data as PublicClient);
-      }
-      setLoading(false);
     }
 
     loadClient();
@@ -72,21 +76,25 @@ function OAuthConsentContent() {
     setSubmitting(accept ? "accept" : "deny");
     setError(null);
 
-    const result = await authClient.oauth2.consent({ accept });
-    if (result.error) {
-      setError(result.error.message || "Could not complete authorization.");
+    try {
+      const result = await authClient.oauth2.consent({ accept });
+      if (result.error) {
+        setError(result.error.message || "Could not complete authorization.");
+        return;
+      }
+
+      const redirectUrl = getOAuthRedirectUrl(result.data);
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+        return;
+      }
+
+      setError("Authorization completed without a redirect URL.");
+    } catch {
+      setError("Could not complete authorization.");
+    } finally {
       setSubmitting(null);
-      return;
     }
-
-    const redirectUrl = getOAuthRedirectUrl(result.data);
-    if (redirectUrl) {
-      window.location.href = redirectUrl;
-      return;
-    }
-
-    setError("Authorization completed without a redirect URL.");
-    setSubmitting(null);
   }
 
   if (loading) {

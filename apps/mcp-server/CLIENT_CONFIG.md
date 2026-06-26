@@ -66,15 +66,26 @@ Add this to your `claude_desktop_config.json`:
 ### For Web Applications
 
 ```javascript
-const mcpClient = new McpClient({
-  transport: {
-    type: "http",
-    url: "https://your-server.com/mcp/json",
-    headers: {
-      "x-api-key": "your-api-key",
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+
+const transport = new StreamableHTTPClientTransport(
+  new URL("https://your-server.com/mcp"),
+  {
+    requestInit: {
+      headers: {
+        "x-api-key": "your-api-key",
+      },
     },
   },
+);
+
+const client = new Client({
+  name: "rtm-web-client",
+  version: "1.0.0",
 });
+
+await client.connect(transport);
 ```
 
 ## STDIO Transport Configuration

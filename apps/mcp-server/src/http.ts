@@ -100,11 +100,14 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 });
 
 function protectedResourceMetadataResponse() {
+  const webAppUrl = process.env.WEB_APP_URL || process.env.BETTER_AUTH_URL;
+  const authServerOrigin = webAppUrl ? new URL(webAppUrl).origin : undefined;
+
   return new Response(
     JSON.stringify(
       createProtectedResourceMetadata({
         appBaseUrl: process.env.APP_BASE_URL,
-        webAppUrl: process.env.WEB_APP_URL || process.env.BETTER_AUTH_URL,
+        webAppUrl: authServerOrigin,
       }),
     ),
     {

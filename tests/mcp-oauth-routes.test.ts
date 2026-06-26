@@ -91,6 +91,21 @@ describe("MCP OAuth routes", () => {
     });
   });
 
+  it("uses the auth server origin when BetterAuth URL includes a path", async () => {
+    vi.stubEnv("APP_BASE_URL", "https://api.milkbridge.dev");
+    vi.stubEnv("WEB_APP_URL", "");
+    vi.stubEnv("BETTER_AUTH_URL", "https://milkbridge.dev/api/auth");
+    vi.resetModules();
+    const { app } = await import("../apps/mcp-server/src/http");
+
+    const res = await app.request("/.well-known/oauth-protected-resource/mcp");
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({
+      authorization_servers: ["https://milkbridge.dev"],
+    });
+  });
+
   it("returns a WWW-Authenticate challenge for unauthenticated MCP requests", async () => {
     vi.stubEnv("APP_BASE_URL", "https://api.milkbridge.dev");
     const { app } = await import("../apps/mcp-server/src/http");

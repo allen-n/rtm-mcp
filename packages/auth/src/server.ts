@@ -133,6 +133,7 @@ export const auth = betterAuth({
         apikey: {
           fields: {
             referenceId: "userId",
+            configId: "config_id",
           },
         },
       },

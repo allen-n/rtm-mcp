@@ -11,8 +11,10 @@
     "auth:generate": "pnpm dlx @better-auth/cli generate --config ./src/server.ts"
   },
   "dependencies": {
+    "@better-auth/api-key": "^1.6.20",
+    "@better-auth/oauth-provider": "^1.6.20",
     "@packages/db": "workspace:^",
-    "better-auth": "^1.0.7"
+    "better-auth": "^1.6.20"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",

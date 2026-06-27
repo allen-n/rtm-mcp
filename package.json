@@ -16,6 +16,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "migrate": "turbo run migrate --filter=@packages/db",
+    "migrate:list": "pnpm --filter @packages/db migrate:list",
     "build:mcp-server": "pnpm --filter @apps/mcp-server build"
   },
   "devDependencies": {

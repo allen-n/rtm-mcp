@@ -5,10 +5,21 @@
 
 import type { ColumnType } from "kysely";
 
-export type Generated<T> =
-  T extends ColumnType<infer S, infer I, infer U>
-    ? ColumnType<S, I | undefined, U>
-    : ColumnType<T, T | undefined, T>;
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
+
+export type Json = JsonValue;
+
+export type JsonArray = JsonValue[];
+
+export type JsonObject = {
+  [x: string]: JsonValue | undefined;
+};
+
+export type JsonPrimitive = boolean | number | string | null;
+
+export type JsonValue = JsonArray | JsonObject | JsonPrimitive;
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
@@ -29,6 +40,7 @@ export interface Account {
 }
 
 export interface Apikey {
+  config_id: Generated<string>;
   createdAt: Timestamp;
   enabled: boolean | null;
   expiresAt: Timestamp | null;
@@ -49,6 +61,84 @@ export interface Apikey {
   requestCount: number | null;
   start: string | null;
   updatedAt: Timestamp;
+  userId: string;
+}
+
+export interface Jwks {
+  createdAt: Timestamp;
+  expiresAt: Timestamp | null;
+  id: string;
+  privateKey: string;
+  publicKey: string;
+}
+
+export interface OauthAccessToken {
+  clientId: string;
+  createdAt: Timestamp;
+  expiresAt: Timestamp;
+  id: string;
+  referenceId: string | null;
+  refreshId: string | null;
+  scopes: Json;
+  sessionId: string | null;
+  token: string;
+  userId: string | null;
+}
+
+export interface OauthClient {
+  clientId: string;
+  clientSecret: string | null;
+  contacts: Json | null;
+  createdAt: Timestamp | null;
+  disabled: Generated<boolean | null>;
+  enableEndSession: boolean | null;
+  grantTypes: Json | null;
+  icon: string | null;
+  id: string;
+  metadata: Json | null;
+  name: string | null;
+  policy: string | null;
+  postLogoutRedirectUris: Json | null;
+  public: boolean | null;
+  redirectUris: Json;
+  referenceId: string | null;
+  requirePKCE: boolean | null;
+  responseTypes: Json | null;
+  scopes: Json | null;
+  skipConsent: boolean | null;
+  softwareId: string | null;
+  softwareStatement: string | null;
+  softwareVersion: string | null;
+  subjectType: string | null;
+  tokenEndpointAuthMethod: string | null;
+  tos: string | null;
+  type: string | null;
+  updatedAt: Timestamp | null;
+  uri: string | null;
+  userId: string | null;
+}
+
+export interface OauthConsent {
+  clientId: string;
+  createdAt: Timestamp;
+  id: string;
+  referenceId: string | null;
+  scopes: Json;
+  updatedAt: Timestamp;
+  userId: string;
+}
+
+export interface OauthRefreshToken {
+  authTime: Timestamp | null;
+  clientId: string;
+  createdAt: Timestamp;
+  expiresAt: Timestamp;
+  id: string;
+  referenceId: string | null;
+  revoked: Timestamp | null;
+  scopes: Json;
+  sessionId: string | null;
+  token: string;
   userId: string;
 }
 
@@ -117,6 +207,11 @@ export interface WebhookSubs {
 export interface DB {
   account: Account;
   apikey: Apikey;
+  jwks: Jwks;
+  oauthAccessToken: OauthAccessToken;
+  oauthClient: OauthClient;
+  oauthConsent: OauthConsent;
+  oauthRefreshToken: OauthRefreshToken;
   rtm_timelines: RtmTimelines;
   rtm_tokens: RtmTokens;
   session: Session;

@@ -124,9 +124,15 @@ The web portal runs on `http://localhost:3000`
 4. Authorize the application on RTM
 5. You'll see a success message when connected!
 
-### 6. Configure Your MCP Client (Shared JSON)
+### 6. Configure Your MCP Client
 
-After connecting RTM and creating an API key in the dashboard settings, use this config for major MCP clients:
+After connecting RTM, OAuth-capable MCP clients can connect to the remote MCP endpoint directly:
+
+```text
+http://localhost:8787/mcp
+```
+
+Clients that do not support OAuth-based remote MCP auth can keep using an API key. Create an API key in the dashboard settings, then use this JSON config:
 
 - Claude Desktop
 - Cursor
@@ -146,7 +152,7 @@ After connecting RTM and creating an API key in the dashboard settings, use this
 }
 ```
 
-In production, replace `http://localhost:8787` with your deployed API base (for example `https://api.yourdomain.com`).
+In production, replace `http://localhost:8787` with your deployed API base (for example `https://api.yourdomain.com`). OAuth clients use `https://api.yourdomain.com/mcp` without custom headers; API-key clients use `https://api.yourdomain.com/mcp/json` with `x-api-key`.
 
 ### 7. Test with MCP Inspector
 
@@ -184,9 +190,10 @@ This project uses [BetterAuth](https://www.better-auth.com/) for authentication:
 
 - **Email/Password**: Primary authentication method. Users sign up with email and password via the web portal.
 - **Session Management**: Sessions last 7 days with automatic renewal.
-- **API Keys**: For programmatic MCP access (useful for integrating with Claude Desktop or other MCP clients).
+- **OAuth Provider**: Standards-based OAuth 2.1 access for remote MCP clients that support MCP authorization and dynamic client registration.
+- **API Keys**: Header-based programmatic MCP access for clients that do not support OAuth MCP auth yet.
 
-The web portal handles user registration and RTM OAuth connection. Once connected, users can use the MCP server with their API key.
+The web portal handles user registration, OAuth consent, and RTM OAuth connection. Once connected, users can use the MCP server with OAuth, an API key, or a browser session.
 
 ### OAuth Providers (Optional)
 
@@ -261,6 +268,9 @@ Once connected, the following tools are available to AI assistants:
 
 - `POST /mcp` - Streamable HTTP MCP endpoint (requires `Accept: application/json, text/event-stream`)
 - `POST /mcp/json` - JSON-only compatibility endpoint for clients that don't support SSE
+- `GET /.well-known/oauth-protected-resource/mcp` - OAuth protected-resource metadata for `/mcp`
+- `GET /.well-known/oauth-protected-resource` - Compatibility alias for protected-resource metadata
+- `GET /.well-known/oauth-authorization-server` - Authorization-server metadata forwarded to BetterAuth
 
 ### REST API & Docs
 
@@ -376,8 +386,8 @@ The web portal uses Next.js, which has two categories of environment variables:
 | `RTM_WEBHOOK_SECRET` | Random secret for webhook HMAC verification                                                                                                                 | —                                         | `openssl rand -hex 32`                    |
 | `DATABASE_URL`       | PostgreSQL connection string                                                                                                                                | `postgres://rtm:rtm@localhost:5433/rtmdb` | `${{Postgres.DATABASE_URL}}`              |
 | `BETTER_AUTH_SECRET` | Auth encryption secret                                                                                                                                      | —                                         | `openssl rand -hex 32`                    |
-| `BETTER_AUTH_URL`    | Auth base URL (same as `APP_BASE_URL`)                                                                                                                      | `http://localhost:8787`                   | `https://api.yourdomain.com`              |
-| `APP_BASE_URL`       | Server's public URL                                                                                                                                         | `http://localhost:8787`                   | `https://api.yourdomain.com`              |
+| `BETTER_AUTH_URL`    | BetterAuth issuer URL. Set this to the web portal origin so OAuth login/consent stays same-origin with the browser session.                                 | `http://localhost:3000`                   | `https://yourdomain.com`                  |
+| `APP_BASE_URL`       | MCP server public API/resource URL. OAuth access tokens use `${APP_BASE_URL}/mcp` as their audience.                                                        | `http://localhost:8787`                   | `https://api.yourdomain.com`              |
 | `WEB_APP_URL`        | Web portal URL — used by BetterAuth `trustedOrigins` and Hono CORS. **Must match the exact origin the browser sends** (scheme + domain, no trailing slash). | `http://localhost:3000`                   | `https://yourdomain.com`                  |
 | `PORT`               | Server port. **Railway sets this automatically** — do not override it in Railway.                                                                           | `8787`                                    | _(set by Railway)_                        |
 | `NODE_ENV`           | Environment                                                                                                                                                 | `development`                             | `production`                              |
@@ -453,7 +463,7 @@ After setting domains, make sure these variables are consistent:
 | Variable                                | Must match                                      |
 | --------------------------------------- | ----------------------------------------------- |
 | `RTM_CALLBACK_URL`                      | `https://api.yourdomain.com/rtm/callback`       |
-| `BETTER_AUTH_URL`                       | `https://api.yourdomain.com`                    |
+| `BETTER_AUTH_URL`                       | `https://yourdomain.com`                        |
 | `APP_BASE_URL`                          | `https://api.yourdomain.com`                    |
 | `WEB_APP_URL` (on mcp service)          | `https://yourdomain.com` (exact browser origin) |
 | `NEXT_PUBLIC_API_BASE` (on web service) | `https://api.yourdomain.com`                    |

@@ -53,7 +53,8 @@ export default function DashboardPage() {
   const [showFullDisconnectNotice, setShowFullDisconnectNotice] =
     useState(false);
   const [disconnectError, setDisconnectError] = useState<string | null>(null);
-  const mcpUrl = `${publicApiBase}/mcp/json`;
+  const oauthMcpUrl = `${publicApiBase}/mcp`;
+  const apiKeyMcpUrl = `${publicApiBase}/mcp/json`;
   const llmsUrl = `${publicApiBase}/llms.txt`;
   const toolsUrl = `${publicApiBase}/api/v1/tools`;
   const skillsUrl = `${publicApiBase}/api/v1/skills.md`;
@@ -62,7 +63,7 @@ export default function DashboardPage() {
   const sharedConfig = `{
   "mcpServers": {
     "milkbridge": {
-      "url": "${mcpUrl}",
+      "url": "${apiKeyMcpUrl}",
       "headers": {
         "x-api-key": "YOUR_API_KEY"
       }
@@ -148,7 +149,7 @@ export default function DashboardPage() {
   }
 
   function copyServerUrl() {
-    navigator.clipboard.writeText(mcpUrl);
+    navigator.clipboard.writeText(oauthMcpUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -331,10 +332,12 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <label className="text-sm font-medium mb-2 block">Server URL</label>
+            <label className="text-sm font-medium mb-2 block">
+              OAuth MCP Server URL
+            </label>
             <div className="flex gap-2">
               <code className="flex-1 px-3 py-2 bg-muted rounded-md text-sm font-mono">
-                {mcpUrl}
+                {oauthMcpUrl}
               </code>
               <Button variant="outline" size="icon" onClick={copyServerUrl}>
                 {copied ? (
@@ -344,6 +347,10 @@ export default function DashboardPage() {
                 )}
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Use this URL with MCP clients that support OAuth-based remote MCP
+              authentication.
+            </p>
           </div>
 
           <div className="space-y-3">
@@ -355,10 +362,10 @@ export default function DashboardPage() {
               <div className="bg-muted p-4 rounded-lg">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div>
-                    <p className="text-sm font-semibold">Shared JSON Config</p>
+                    <p className="text-sm font-semibold">API Key JSON Config</p>
                     <p className="text-xs text-muted-foreground">
-                      Use this for most MCP clients that accept JSON server
-                      definitions.
+                      Use this for clients that require explicit headers or do
+                      not support OAuth MCP auth yet.
                     </p>
                   </div>
                   <Button
@@ -377,7 +384,9 @@ export default function DashboardPage() {
               </div>
 
               <div className="rounded-lg border p-4">
-                <p className="text-sm font-semibold mb-3">Docs & API Reference</p>
+                <p className="text-sm font-semibold mb-3">
+                  Docs & API Reference
+                </p>
                 <div className="grid gap-2 text-sm">
                   <a
                     href={docsUrl}

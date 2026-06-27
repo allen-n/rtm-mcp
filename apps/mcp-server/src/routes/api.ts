@@ -503,7 +503,7 @@ async function authenticateRequest(c: ApiContext): Promise<string | null> {
       });
 
       if (apiKeyResult?.valid && apiKeyResult.key) {
-        return apiKeyResult.key.userId;
+        return apiKeyResult.key.referenceId;
       }
     } catch (error) {
       authLogger.error("API key verification error", error);

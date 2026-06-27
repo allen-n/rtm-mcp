@@ -5,17 +5,33 @@ This guide provides configuration examples for connecting to the RTM MCP server 
 ## Transport Types
 
 The server supports two transport modes:
+
 - **HTTP** (default): For remote deployment and web-based clients
 - **STDIO**: For local development and command-line clients
 
 Set the transport type using the `MCP_TRANSPORT` environment variable:
+
 ```bash
 export MCP_TRANSPORT=http  # or stdio
 ```
 
 ## HTTP Transport Configuration
 
-### For Claude Desktop (Remote HTTP)
+### For OAuth-Capable Remote MCP Clients
+
+Use the protected MCP resource URL without custom headers:
+
+```text
+https://your-server.com/mcp
+```
+
+The server publishes OAuth protected-resource metadata at:
+
+```text
+https://your-server.com/.well-known/oauth-protected-resource/mcp
+```
+
+### For API-Key Remote MCP Clients
 
 Add this to your `claude_desktop_config.json`:
 
@@ -23,7 +39,7 @@ Add this to your `claude_desktop_config.json`:
 {
   "mcpServers": {
     "rtm-mcp": {
-      "url": "https://your-server.com/mcp",
+      "url": "https://your-server.com/mcp/json",
       "headers": {
         "x-api-key": "your-api-key-here"
       }
@@ -38,7 +54,7 @@ Add this to your `claude_desktop_config.json`:
 {
   "mcpServers": {
     "rtm-mcp": {
-      "url": "http://localhost:8787/mcp",
+      "url": "http://localhost:8787/mcp/json",
       "headers": {
         "x-api-key": "dev-api-key"
       }
@@ -50,15 +66,26 @@ Add this to your `claude_desktop_config.json`:
 ### For Web Applications
 
 ```javascript
-const mcpClient = new McpClient({
-  transport: {
-    type: 'http',
-    url: 'https://your-server.com/mcp',
-    headers: {
-      'x-api-key': 'your-api-key'
-    }
-  }
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+
+const transport = new StreamableHTTPClientTransport(
+  new URL("https://your-server.com/mcp"),
+  {
+    requestInit: {
+      headers: {
+        "x-api-key": "your-api-key",
+      },
+    },
+  },
+);
+
+const client = new Client({
+  name: "rtm-web-client",
+  version: "1.0.0",
 });
+
+await client.connect(transport);
 ```
 
 ## STDIO Transport Configuration
@@ -105,9 +132,14 @@ const mcpClient = new McpClient({
 
 ## Authentication Methods
 
+### OAuth Authentication
+
+OAuth-capable clients should connect to `/mcp` and follow the server's protected-resource metadata. OAuth access tokens must target the MCP resource audience and include the `mcp:access` scope.
+
 ### API Key Authentication
 
 Include your API key in the request headers:
+
 ```json
 {
   "headers": {
@@ -119,19 +151,21 @@ Include your API key in the request headers:
 ### Session Authentication (HTTP only)
 
 For browser-based clients, you can use session cookies. Make sure to include credentials:
+
 ```javascript
 const mcpClient = new McpClient({
   transport: {
-    type: 'http',
-    url: 'http://localhost:8787/mcp',
-    credentials: 'include'  // Include cookies
-  }
+    type: "http",
+    url: "http://localhost:8787/mcp",
+    credentials: "include", // Include cookies
+  },
 });
 ```
 
 ## Environment Variables
 
 ### Server Configuration
+
 ```bash
 # Transport type (http or stdio)
 export MCP_TRANSPORT=http
@@ -149,6 +183,7 @@ export WEB_APP_URL=https://your-web-app.com
 ```
 
 ### Development Settings
+
 ```bash
 # Enable debug logging
 export DEBUG=mcp:*
@@ -163,11 +198,13 @@ export DATABASE_URL=postgresql://localhost/rtm_mcp_dev
 ## Testing Your Configuration
 
 ### 1. Health Check
+
 ```bash
 curl http://localhost:8787/health
 ```
 
 Expected response:
+
 ```json
 {
   "status": "ok",
@@ -183,12 +220,14 @@ Expected response:
 ```
 
 ### 2. Test with Claude Desktop
+
 1. Update your `claude_desktop_config.json`
 2. Restart Claude Desktop
 3. Look for the MCP tools icon (🔧) in the interface
 4. Try a command like "List my RTM tasks"
 
 ### 3. Test STDIO Transport
+
 ```bash
 # Terminal 1: Start the server
 npm run dev:stdio
@@ -224,6 +263,7 @@ echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | nc localhost 8787
 ### Debug Logging
 
 Enable detailed logging:
+
 ```bash
 export DEBUG=mcp:*,transport:*
 export MCP_TRANSPORT=http  # or stdio

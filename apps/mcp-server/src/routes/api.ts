@@ -7,6 +7,7 @@ import { getOrCreateTimeline } from "@rtm-client/timeline";
 import { swaggerUI } from "@hono/swagger-ui";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
+import { getApiKeyFromHeaders } from "../api-key.js";
 import { authLogger } from "../logger.js";
 import { getStaticDoc } from "../static-docs.js";
 import { buildApiOpenApiSpec } from "./openapi-spec.js";
@@ -495,7 +496,10 @@ type ApiContext = Context<{ Variables: { user: { id: string } | null } }>;
 
 async function authenticateRequest(c: ApiContext): Promise<string | null> {
   // Try API key authentication first
-  const apiKeyHeader = c.req.header("x-api-key");
+  const apiKeyHeader = getApiKeyFromHeaders(
+    c.req.header("x-api-key"),
+    c.req.header("authorization")
+  );
   if (apiKeyHeader) {
     try {
       const apiKeyResult = await auth.api.verifyApiKey({

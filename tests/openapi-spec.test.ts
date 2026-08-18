@@ -14,6 +14,26 @@ describe("buildApiOpenApiSpec", () => {
     expect(paths["/api/v1/openapi.json"]).toBeDefined();
   });
 
+  it("documents both API key authentication headers", () => {
+    const spec = buildApiOpenApiSpec({});
+
+    expect(spec.components.securitySchemes).toMatchObject({
+      ApiKeyAuth: {
+        type: "apiKey",
+        in: "header",
+        name: "x-api-key",
+      },
+      BearerAuth: {
+        type: "http",
+        scheme: "bearer",
+      },
+    });
+    expect(spec.paths["/api/v1/invoke"].post.security).toEqual([
+      { ApiKeyAuth: [] },
+      { BearerAuth: [] },
+    ]);
+  });
+
   it("exports tool enum values for invoke request", () => {
     const spec = buildApiOpenApiSpec({
       get_tasks: { description: "Get tasks" },

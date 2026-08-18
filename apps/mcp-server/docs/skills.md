@@ -9,11 +9,17 @@ Prefer origin-relative paths (for example, `/api/v1/invoke`) and do not hardcode
 
 ## Authentication
 
-All requests require:
+All requests require an API key using either header:
 
 ```http
 x-api-key: your-api-key-here
 ```
+
+```http
+Authorization: Bearer your-api-key-here
+```
+
+If both headers are present, `x-api-key` takes precedence.
 
 ## Invocation Pattern
 

@@ -6,6 +6,8 @@ import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { logger } from "hono/logger";
+import { getApiKeyFromHeaders } from "./api-key.js";
+import { corsAllowHeaders } from "./cors.js";
 import { authLogger, httpLogger, mcpLogger } from "./logger.js";
 import { createMcpServer, mcpServer, withTransportUserContext } from "./mcp.js";
 import { authRoutes } from "./routes/auth.js";
@@ -60,13 +62,7 @@ app.use(
     },
     credentials: true,
     exposeHeaders: ["MCP-Session-Id"],
-    allowHeaders: [
-      "Content-Type",
-      "MCP-Session-Id",
-      "x-api-key",
-      "Accept",
-      "x-custom-auth-headers",
-    ],
+    allowHeaders: corsAllowHeaders,
   })
 );
 
@@ -109,7 +105,10 @@ async function handleMcpRequest(
   let userId: string | null = null;
 
   // Try API key authentication first
-  const apiKeyHeader = c.req.header("x-api-key");
+  const apiKeyHeader = getApiKeyFromHeaders(
+    c.req.header("x-api-key"),
+    c.req.header("authorization")
+  );
   if (apiKeyHeader) {
     authLogger.info("API key found in header", { requestId });
     try {

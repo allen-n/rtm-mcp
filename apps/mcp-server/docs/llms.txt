@@ -8,7 +8,7 @@ milkbridge provides a REST API and MCP (Model Context Protocol) server for manag
 
 ## Authentication
 
-All API requests require the `x-api-key` header. Create an API key in the web app settings after connecting your RTM account.
+Protected endpoints such as `/api/v1/invoke` and `/mcp` require an API key. Send it in either the `x-api-key` header or the `Authorization: Bearer <api-key>` header. If both are present, `x-api-key` takes precedence. Create an API key in the web app settings after connecting your RTM account.
 
 ## Base URL Rule
 

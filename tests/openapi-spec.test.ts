@@ -17,6 +17,9 @@ describe("buildApiOpenApiSpec", () => {
   it("documents both API key authentication headers", () => {
     const spec = buildApiOpenApiSpec({});
 
+    expect(spec.info.description).toBe(
+      "REST wrapper around the RTM MCP toolset. Authenticate with x-api-key or Authorization: Bearer <api-key>. When both are present, x-api-key takes precedence."
+    );
     expect(spec.components.securitySchemes).toMatchObject({
       ApiKeyAuth: {
         type: "apiKey",

@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { getApiKeyFromHeaders } from "../apps/mcp-server/src/api-key";
+import {
+  apiKeyAuthErrorMessage,
+  getApiKeyFromHeaders,
+} from "../apps/mcp-server/src/api-key";
 
-describe("getApiKeyFromHeaders", () => {
+describe("API key authentication", () => {
+  it("describes both API key headers and session fallback", () => {
+    expect(apiKeyAuthErrorMessage).toBe(
+      "Unauthorized. Provide x-api-key or Authorization: Bearer <api-key>, or use a valid session."
+    );
+  });
+
   it("returns the x-api-key header", () => {
     expect(getApiKeyFromHeaders("x-key", undefined)).toBe("x-key");
   });

@@ -17,7 +17,7 @@ export function buildApiOpenApiSpec(
       title: opts.title ?? "RTM MCP REST API",
       version: opts.version ?? "1.0.0",
       description:
-        "REST wrapper around the RTM MCP toolset. Authenticate with x-api-key or a Bearer API key.",
+        "REST wrapper around the RTM MCP toolset. Authenticate with x-api-key or Authorization: Bearer <api-key>. When both are present, x-api-key takes precedence.",
     },
     tags: [
       { name: "docs", description: "Machine and human-readable docs" },

@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Shared API-key header parsing
+## Task 1: Shared API-key header parsing
 
 **Files:**
 - Create: `apps/mcp-server/src/api-key.ts`

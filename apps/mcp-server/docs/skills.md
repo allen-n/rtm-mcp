@@ -9,7 +9,7 @@ Prefer origin-relative paths (for example, `/api/v1/invoke`) and do not hardcode
 
 ## Authentication
 
-All requests require an API key using either header:
+Protected requests require an API key using either header:
 
 ```http
 x-api-key: your-api-key-here

@@ -7,7 +7,7 @@ import { getOrCreateTimeline } from "@rtm-client/timeline";
 import { swaggerUI } from "@hono/swagger-ui";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { getApiKeyFromHeaders } from "../api-key.js";
+import { apiKeyAuthErrorMessage, getApiKeyFromHeaders } from "../api-key.js";
 import { authLogger } from "../logger.js";
 import { getStaticDoc } from "../static-docs.js";
 import { buildApiOpenApiSpec } from "./openapi-spec.js";
@@ -591,7 +591,7 @@ export function apiRoutes() {
 
       const userId = await authenticateRequest(c);
       if (!userId) {
-        return c.json({ error: "Unauthorized. Provide x-api-key header or valid session." }, 401);
+        return c.json({ error: apiKeyAuthErrorMessage }, 401);
       }
 
       const { tool, input } = invokeParse.data;
